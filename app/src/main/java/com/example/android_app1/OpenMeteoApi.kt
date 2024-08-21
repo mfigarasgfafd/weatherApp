@@ -17,7 +17,16 @@ interface OpenMeteoApi {
         @Query("longitude") longitude: Double,
         @Query("daily") daily: String = "weathercode,temperature_2m_max,temperature_2m_min",
         @Query("timezone") timezone: String = "auto"
-    ): com.example.android_app1.ForecastResponse
+    ): ForecastResponse
+
+    // New method to fetch hourly temperature data
+    @GET("v1/forecast")
+    suspend fun getHourlyTemperature(
+        @Query("latitude") latitude: Double,
+        @Query("longitude") longitude: Double,
+        @Query("hourly") hourly: String = "temperature_2m",
+        @Query("timezone") timezone: String = "auto"
+    ): HourlyForecastResponse
 }
 
 object RetrofitClient {
@@ -33,7 +42,7 @@ object RetrofitClient {
     }
 }
 
-// Data classes for current weather (you should already have these)
+// Data classes for current weather
 data class WeatherResponse(
     val latitude: Double,
     val longitude: Double,
@@ -48,7 +57,7 @@ data class CurrentWeather(
     val time: String
 )
 
-// New data classes for forecast
+// Data classes for daily forecast
 data class ForecastResponse(
     val daily: DailyForecast
 )
@@ -58,4 +67,14 @@ data class DailyForecast(
     val weathercode: List<Int>,
     val temperature_2m_max: List<Double>,
     val temperature_2m_min: List<Double>
+)
+
+// New data classes for hourly forecast
+data class HourlyForecastResponse(
+    val hourly: HourlyData
+)
+
+data class HourlyData(
+    val temperature_2m: List<Double>,
+    val time: List<String>
 )

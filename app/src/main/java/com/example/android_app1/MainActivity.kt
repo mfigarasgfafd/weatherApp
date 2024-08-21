@@ -1,148 +1,132 @@
 package com.example.android_app1
 
+import HourlyForecastResponse
+import WeatherResponse
+import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.drawable.AnimationDrawable
 import android.location.Location
 import android.os.Bundle
-import android.view.animation.Animation
-import android.view.animation.RotateAnimation
-import android.widget.ImageView
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.android_app1.ui.theme.Android_app1Theme
-import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.appcompat.app.AppCompatActivity
+import android.view.GestureDetector
+import android.view.MotionEvent
+import android.widget.ImageButton
 import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.GravityCompat
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.lifecycleScope
+import com.github.mikephil.charting.charts.LineChart
+import com.github.mikephil.charting.components.XAxis
+import com.github.mikephil.charting.data.Entry
+import com.github.mikephil.charting.data.LineData
+import com.github.mikephil.charting.data.LineDataSet
+import com.github.mikephil.charting.formatter.ValueFormatter
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
+import com.google.android.material.navigation.NavigationView
 import kotlinx.coroutines.launch
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import kotlinx.coroutines.launch
-import kotlin.math.*
-import android.Manifest
-import android.content.Intent
-import android.view.GestureDetector
-import android.view.MotionEvent
-import android.widget.Button
-import android.widget.Toast
+import java.text.SimpleDateFormat
+import java.util.*
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
+import android.graphics.Color
+
+
 
 class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
-
-    lateinit var gestureDetector: GestureDetector
-    var x2:Float = 0.0f
-    var x1:Float = 0.0f
-    var y2:Float = 0.0f
-    var y1:Float = 0.0f
-
-
-    companion object{
-        const val MIN_DISTANCE = 150
-    }
-
+    private lateinit var drawerLayout: DrawerLayout
+    private lateinit var navView: NavigationView
 
     private lateinit var weatherTextView: TextView
-    private lateinit var cityChipGroup: ChipGroup
-    private val cities = mutableListOf<City>()
+    private lateinit var bigTempView: TextView
+    private lateinit var weatherStatus: TextView
+    private lateinit var locationText: TextView
+    private lateinit var chart1: LineChart
+    private lateinit var forecastTextView: TextView
+    private lateinit var hamburgerMenu: ImageButton
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private val LOCATION_PERMISSION_REQUEST_CODE = 1
-    private lateinit var forecastButton: Button
     private var currentCity: City? = null
+    private val cities = mutableListOf<City>()
 
+    private lateinit var gestureDetector: GestureDetector
+    private var x1 = 0f
+    private var x2 = 0f
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-            super.onCreate(savedInstanceState)
-            setContentView(R.layout.activity_main)
-
-            val rootView = findViewById<ConstraintLayout>(R.id.rootView)
-
-            val drawable : AnimationDrawable = rootView.background as AnimationDrawable
-            drawable.setEnterFadeDuration(1500)
-            drawable.setExitFadeDuration(2000)
-            drawable.start()
-
-
-            // image rotate animation
-            val imageView = findViewById<ImageView>(R.id.imageView)
-            val rotateAnimation = RotateAnimation(
-                0f,
-                360f,
-                Animation.RELATIVE_TO_SELF,
-                0.5f,
-                Animation.RELATIVE_TO_SELF,
-                0.5f
-            )
-            rotateAnimation.duration = 10000 // 10 seconds for a full rotation
-            rotateAnimation.repeatCount = Animation.INFINITE
-            imageView.startAnimation(rotateAnimation)
-
-            //
-            weatherTextView = findViewById(R.id.weatherTextView)
-            cityChipGroup = findViewById(R.id.cityChipGroup)
-            fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-
-            // fetchWeatherData()
-        requestLocationPermission()
-
-        forecastButton = findViewById(R.id.forecastButton)
-        forecastButton.setOnClickListener {
-            currentCity?.let { city ->
-                val intent = Intent(this, ForecastActivity::class.java)
-                intent.putExtra("CITY_NAME", city.name)
-                intent.putExtra("CITY_LATITUDE", city.latitude)
-                intent.putExtra("CITY_LONGITUDE", city.longitude)
-                startActivity(intent)
-            } ?: run {
-                print(currentCity)
-                Toast.makeText(this, "Please select a city first", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        loadCitiesFromCsv()
-        createCityChips()
-
-        this.gestureDetector = GestureDetector(this, this)
-        }
-
-    override fun onTouchEvent(event: MotionEvent): Boolean {
-        if(event != null){
-            gestureDetector.onTouchEvent(event)
-        }
-        when(event?.action){
-            0 -> {
-                x1 = event.x
-                y1 = event.y
-            }
-            1 -> {
-                x2 = event.x
-                y2 = event.y
-                val valueX:Float = x2 - x1
-                if(abs(valueX) > MIN_DISTANCE){
-                    if(x2 > x1){
-                        // right swipe
-                        print("right swipe")
-                    }else{
-                        val intent = Intent(this, SwipeActivity::class.java)
-                    }
-                }
-            }
-        }
-        return super.onTouchEvent(event)
+    companion object {
+        const val MIN_DISTANCE = 150
     }
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.new_main_activity)
+
+        // Initialize views
+        bigTempView = findViewById(R.id.bigTempView)
+        weatherStatus = findViewById(R.id.weatherStatus)
+        locationText = findViewById(R.id.locationText)
+        chart1 = findViewById(R.id.chart1)
+        forecastTextView = findViewById(R.id.forecastTextView)
+        hamburgerMenu = findViewById(R.id.hamburgerMenu)
+
+        gestureDetector = GestureDetector(this, this)
+
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+
+        drawerLayout = findViewById(R.id.drawer_layout)
+        navView = findViewById(R.id.navigation_view)
+
+
+        // Load cities from CSV and create city chips
+        loadCitiesFromCsv()
+
+        // Request location permission
+        requestLocationPermission()
+
+        // Set hamburger menu click listener
+        hamburgerMenu.setOnClickListener {
+            // Open the sidebar or perform related action
+            openSidebar()
+        }
+
+
+
+        navView.setNavigationItemSelectedListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.nav_home -> {
+                    // Handle Home click
+                    Toast.makeText(this, "Home clicked", Toast.LENGTH_SHORT).show()
+                }
+                R.id.nav_settings -> {
+                    // Handle Settings click
+                    Toast.makeText(this, "Settings clicked", Toast.LENGTH_SHORT).show()
+                }
+                R.id.nav_about -> {
+                    // Handle About click
+                    Toast.makeText(this, "About clicked", Toast.LENGTH_SHORT).show()
+                }
+            }
+            // Close the drawer after item is clicked
+            drawerLayout.closeDrawer(GravityCompat.START)
+            true
+        }
+
+        // Example latitude and longitude for New York ((TEMPORARY))
+        val latitude = 40.7128
+        val longitude = -74.0060
+        fetchHourlyTemperatureData(latitude, longitude)
+
+    }
 
     override fun onDown(p0: MotionEvent): Boolean {
         return false
@@ -213,12 +197,13 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
             .addOnSuccessListener { location: Location? ->
                 location?.let {
                     val nearestCity = findNearestCity(it.latitude, it.longitude)
-                    fetchWeatherData(nearestCity)
+                    fetchWeatherData(nearestCity.latitude, nearestCity.longitude)
                 } ?: run {
-                    weatherTextView.text = "Unable to get last known location."
+                    forecastTextView.text = "Unable to get last known location."
                 }
             }
     }
+
 
     private fun findNearestCity(latitude: Double, longitude: Double): City {
         val nearestCity = cities.minByOrNull { city ->
@@ -256,72 +241,88 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
             }
         }
     }
-// testr
-    private fun createCityChips() {
-        cities.forEach { city ->
-            val chip = Chip(this)
-            chip.text = "${city.name}, ${city.country}"
-            chip.isCheckable = true
-            chip.setOnCheckedChangeListener { _, isChecked ->
-                if (isChecked) {
-                    currentCity = city
-                    fetchWeatherData(city)
-                }
+
+
+    private fun fetchWeatherData(latitude: Double, longitude: Double) {
+        lifecycleScope.launch {
+            try {
+                val response = RetrofitClient.instance.getHourlyTemperature(latitude, longitude)
+                updateLineChart(response)
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-            cityChipGroup.addView(chip)
         }
     }
 
-    private fun fetchWeatherData(city: City) {
+    private fun fetchHourlyTemperatureData(latitude: Double, longitude: Double) {
         lifecycleScope.launch {
             try {
-                val response = RetrofitClient.instance.getCurrentWeather(city.latitude, city.longitude)
-
-                val weatherDescription = when (response.current_weather.weathercode) {
-                    0 -> "Clear sky"
-                    1 -> "Mainly clear"
-                    2 -> "Partly cloudy"
-                    3 -> "Overcast"
-                    45 -> "Fog"
-                    48 -> "Depositing rime fog"
-                    51 -> "Light drizzle"
-                    53 -> "Moderate drizzle"
-                    55 -> "Dense drizzle"
-                    56 -> "Light freezing drizzle"
-                    57 -> "Dense freezing drizzle"
-                    61 -> "Slight rain"
-                    63 -> "Moderate rain"
-                    65 -> "Heavy rain"
-                    66 -> "Light freezing rain"
-                    67 -> "Heavy freezing rain"
-                    71 -> "Slight snow fall"
-                    73 -> "Moderate snow fall"
-                    75 -> "Heavy snow fall"
-                    77 -> "Snow grains"
-                    80 -> "Slight rain showers"
-                    81 -> "Moderate rain showers"
-                    82 -> "Violent rain showers"
-                    85 -> "Slight snow showers"
-                    86 -> "Heavy snow showers"
-                    95 -> "Slight or moderate thunderstorm"
-                    96 -> "Thunderstorm with slight hail"
-                    99 -> "Thunderstorm with heavy hail"
-                    else -> "Unknown weather condition " + response.current_weather.weathercode
-                }
-
-                val weatherInfo = buildString {
-                    append("City: ${city.name}, ${city.country}\n\n")
-                    append("Weather: $weatherDescription\n")
-                    append("Temperature: ${response.current_weather.temperature}°C\n")
-                    append("Wind Speed: ${response.current_weather.windspeed} km/h\n")
-                    append("Wind Direction: ${response.current_weather.winddirection}°\n")
-                    append("Time: ${response.current_weather.time}")
-                }
-
-                weatherTextView.text = weatherInfo
+                val response = RetrofitClient.instance.getHourlyTemperature(latitude, longitude)
+                updateLineChart(response)
             } catch (e: Exception) {
-                weatherTextView.text = "Error fetching weather data: ${e.message}"
+                e.printStackTrace()
             }
+        }
+    }
+    private fun updateLineChart(response: HourlyForecastResponse) {
+        val hourlyTemperature = response.hourly.temperature_2m
+        val hourlyTimes = response.hourly.time.map { parseHourlyTime(it) }
+
+        val entries = mutableListOf<Entry>()
+        hourlyTimes.forEachIndexed { index, time ->
+            entries.add(Entry(time.toFloat(), hourlyTemperature[index].toFloat()))
+        }
+
+        val dataSet = LineDataSet(entries, "Temperature")
+        dataSet.color = Color.BLUE
+        dataSet.setCircleColor(Color.BLUE)
+        dataSet.lineWidth = 2f
+        dataSet.circleRadius = 4f
+        dataSet.mode = LineDataSet.Mode.CUBIC_BEZIER
+        dataSet.setDrawValues(false)
+
+        val data = LineData(dataSet)
+        chart1.data = data
+
+        chart1.xAxis.valueFormatter = object : ValueFormatter() {
+            override fun getFormattedValue(value: Float): String {
+                return formatHourlyTime(value.toLong())
+            }
+        }
+
+        chart1.xAxis.position = XAxis.XAxisPosition.BOTTOM
+        chart1.xAxis.granularity = 1f
+        chart1.xAxis.labelCount = 6
+
+        chart1.axisRight.isEnabled = false
+        chart1.axisLeft.granularity = 1f
+
+        chart1.description.isEnabled = false
+        chart1.legend.isEnabled = false
+        chart1.invalidate()
+    }
+
+    private fun parseHourlyTime(timeString: String): Long {
+        val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm", Locale.getDefault())
+        val date = sdf.parse(timeString)
+        return date?.time ?: 0
+    }
+
+    private fun formatHourlyTime(timeInMillis: Long): String {
+        val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
+        return sdf.format(Date(timeInMillis))
+    }
+
+
+    private fun openSidebar() {
+        drawerLayout.openDrawer(GravityCompat.START)
+    }
+
+    override fun onBackPressed() {
+        if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+            drawerLayout.closeDrawer(GravityCompat.START)
+        } else {
+            super.onBackPressed()
         }
     }
 

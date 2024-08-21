@@ -33,7 +33,7 @@ class ForecastActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val response = RetrofitClient.instance.getForecast(latitude, longitude)
-                displayForecast(response)
+                displayForecast(response as com.example.android_app1.ForecastResponse)  // Explicitly cast the response
             } catch (e: Exception) {
                 forecastTextView.text = "Error fetching forecast: ${e.message}"
             }
