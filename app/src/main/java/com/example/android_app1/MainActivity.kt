@@ -256,7 +256,7 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
             }
         }
     }
-
+// testr
     private fun createCityChips() {
         cities.forEach { city ->
             val chip = Chip(this)
