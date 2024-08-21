@@ -11,6 +11,7 @@ interface OpenMeteoApi {
         @Query("current_weather") currentWeather: Boolean = true
     ): WeatherResponse
 
+
     @GET("v1/forecast")
     suspend fun getForecast(
         @Query("latitude") latitude: Double,
@@ -18,7 +19,6 @@ interface OpenMeteoApi {
         @Query("daily") daily: String = "weathercode,temperature_2m_max,temperature_2m_min",
         @Query("timezone") timezone: String = "auto"
     ): ForecastResponse
-
     // New method to fetch hourly temperature data
     @GET("v1/forecast")
     suspend fun getHourlyTemperature(
@@ -27,6 +27,15 @@ interface OpenMeteoApi {
         @Query("hourly") hourly: String = "temperature_2m",
         @Query("timezone") timezone: String = "auto"
     ): HourlyForecastResponse
+
+
+    @GET("v1/forecast")
+    suspend fun getDailyForecast(
+        @Query("latitude") latitude: Double,
+        @Query("longitude") longitude: Double,
+        @Query("daily") daily: String = "weathercode,temperature_2m_max,temperature_2m_min",
+        @Query("timezone") timezone: String = "auto"
+    ): ForecastResponse
 }
 
 object RetrofitClient {

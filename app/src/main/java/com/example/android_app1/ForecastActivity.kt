@@ -1,5 +1,6 @@
 package com.example.android_app1
 
+import ForecastResponse
 import WeatherResponse
 import android.os.Bundle
 import android.widget.TextView
@@ -8,7 +9,6 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import retrofit2.http.GET
 import retrofit2.http.Query
-import com.example.android_app1.ForecastResponse
 
 class ForecastActivity : AppCompatActivity() {
 
@@ -33,7 +33,7 @@ class ForecastActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val response = RetrofitClient.instance.getForecast(latitude, longitude)
-                displayForecast(response as com.example.android_app1.ForecastResponse)  // Explicitly cast the response
+                displayForecast(response)  // Explicitly cast the response
             } catch (e: Exception) {
                 forecastTextView.text = "Error fetching forecast: ${e.message}"
             }
@@ -71,31 +71,4 @@ class ForecastActivity : AppCompatActivity() {
     }
 }
 
-// Update the API interface
-interface OpenMeteoApi {
-    @GET("v1/forecast")
-    suspend fun getCurrentWeather(
-        @Query("latitude") latitude: Double,
-        @Query("longitude") longitude: Double,
-        @Query("current_weather") currentWeather: Boolean = true
-    ): WeatherResponse
 
-    @GET("v1/forecast")
-    suspend fun getForecast(
-        @Query("latitude") latitude: Double,
-        @Query("longitude") longitude: Double,
-        @Query("daily") daily: String = "weathercode,temperature_2m_max,temperature_2m_min",
-        @Query("timezone") timezone: String = "auto"
-    ): ForecastResponse
-}
-
-data class ForecastResponse(
-    val daily: DailyForecast
-)
-
-data class DailyForecast(
-    val time: List<String>,
-    val weathercode: List<Int>,
-    val temperature_2m_max: List<Double>,
-    val temperature_2m_min: List<Double>
-)

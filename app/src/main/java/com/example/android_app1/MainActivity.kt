@@ -1,5 +1,6 @@
 package com.example.android_app1
 
+import ForecastResponse
 import HourlyForecastResponse
 import WeatherResponse
 import android.Manifest
@@ -34,18 +35,19 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.math.atan2
-import kotlin.math.cos
-import kotlin.math.sin
-import kotlin.math.sqrt
+import kotlin.math.*
 import android.graphics.Color
+import android.widget.LinearLayout
+import com.google.android.gms.tasks.OnSuccessListener
 
 
+// TODO: sidebar lets you choose a city
 
 class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var navView: NavigationView
 
+    private lateinit var smallTemps: TextView
     private lateinit var weatherTextView: TextView
     private lateinit var bigTempView: TextView
     private lateinit var weatherStatus: TextView
@@ -74,6 +76,7 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
         // Initialize views
         bigTempView = findViewById(R.id.bigTempView)
         weatherStatus = findViewById(R.id.weatherStatus)
+        smallTemps = findViewById(R.id.smallTemps)
         locationText = findViewById(R.id.locationText)
         chart1 = findViewById(R.id.chart1)
         forecastTextView = findViewById(R.id.forecastTextView)
@@ -122,9 +125,12 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
         }
 
         // Example latitude and longitude for New York ((TEMPORARY))
-        val latitude = 40.7128
-        val longitude = -74.0060
-        fetchHourlyTemperatureData(latitude, longitude)
+//        val latitude = 40.7128
+//        val longitude = -74.0060
+        getLastKnownLocation()
+//
+//        fetchWeatherData(latitude, longitude)
+//        fetchHourlyTemperatureData(latitude, longitude)
 
     }
 
@@ -186,32 +192,56 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
         if (ActivityCompat.checkSelfPermission(
                 this,
                 Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_COARSE_LOCATION
             ) != PackageManager.PERMISSION_GRANTED
         ) {
+            // Permission is not granted
             return
         }
+
         fusedLocationClient.lastLocation
-            .addOnSuccessListener { location: Location? ->
+            .addOnSuccessListener(this, OnSuccessListener<Location> { location ->
                 location?.let {
-                    val nearestCity = findNearestCity(it.latitude, it.longitude)
-                    fetchWeatherData(nearestCity.latitude, nearestCity.longitude)
+                    val nearestCity = findNearestCity(it.latitude, it.longitude, cities)
+                    if (nearestCity != null) {
+                        // Fetch weather data and hourly temperature data for the nearest city
+                        fetchWeatherData(nearestCity.latitude, nearestCity.longitude)
+                        fetchHourlyTemperatureData(nearestCity.latitude, nearestCity.longitude)
+                    } else {
+                        forecastTextView.text = "Unable to find nearest city."
+                    }
                 } ?: run {
                     forecastTextView.text = "Unable to get last known location."
                 }
-            }
+            })
     }
 
 
-    private fun findNearestCity(latitude: Double, longitude: Double): City {
-        val nearestCity = cities.minByOrNull { city ->
-            calculateDistance(latitude, longitude, city.latitude, city.longitude)
-        } ?: cities.first()
-        currentCity = nearestCity
+
+
+    fun findNearestCity(currentLatitude: Double, currentLongitude: Double, cities: List<City>): City? {
+        var nearestCity: City? = null
+        var minDistance = Double.MAX_VALUE
+
+        for (city in cities) {
+            val distance = haversineDistance(currentLatitude, currentLongitude, city.latitude, city.longitude)
+            if (distance < minDistance) {
+                minDistance = distance
+                nearestCity = city
+            }
+        }
         return nearestCity
     }
+
+
+    fun haversineDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+        val R = 6371.0 // Radius of the Earth in kilometers
+        val dLat = Math.toRadians(lat2 - lat1)
+        val dLon = Math.toRadians(lon2 - lon1)
+        val a = sin(dLat / 2).pow(2.0) + cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) * sin(dLon / 2).pow(2.0)
+        val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+        return R * c // Distance in kilometers
+    }
+
 
     private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
         val R = 6371 // Earth's radius in kilometers
@@ -242,65 +272,160 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
         }
     }
 
+    private fun updateDailyForecastUI(forecastResponse: ForecastResponse, city: City) {
+        bigTempView.text = "${forecastResponse.daily.temperature_2m_min.first()}°C"
+        weatherStatus.text = "${getWeatherDescription(forecastResponse.daily.weathercode.first())}"
+        locationText.text = city.name
+        smallTemps.text = "${forecastResponse.daily.temperature_2m_max.first() }° / ${forecastResponse.daily.temperature_2m_min.first()}°"
+        updateForecastTable(forecastResponse)
+    }
+
+    // Update hourly forecast UI components (like the line chart)
+    private fun updateHourlyForecastUI(hourlyForecastResponse: HourlyForecastResponse) {
+        updateLineChart(hourlyForecastResponse)
+    }
+
+//    private fun updateUI(forecastResponse: ForecastResponse, city: City) {
+//        bigTempView.text = "Max Temperature: ${forecastResponse.daily.temperature_2m_max.first()}°C"
+//        weatherStatus.text = "Weather: ${getWeatherDescription(forecastResponse.daily.weathercode.first())}"
+//        locationText.text = city.name
+//        updateLineChart(forecastResponse)  // Make sure this method is defined to handle ForecastResponse if needed
+//        updateForecastTable(forecastResponse)
+//    }
+//
+
+
+
+
+    private fun updateForecastTable(forecastResponse: ForecastResponse) {
+        val forecastTextView = findViewById<TextView>(R.id.forecastTextView)
+        val forecastBuilder = StringBuilder()
+
+        // Build a string to display the 7-day forecast
+        forecastResponse.daily.time.forEachIndexed { index, time ->
+            val maxTemp = forecastResponse.daily.temperature_2m_max[index]
+            val minTemp = forecastResponse.daily.temperature_2m_min[index]
+            val weatherCode = forecastResponse.daily.weathercode[index]
+
+            // Add data to the string
+            forecastBuilder.append("Date: $time\n")
+                .append("Max Temp: ${maxTemp}°C\n")
+                .append("Min Temp: ${minTemp}°C\n")
+                .append("Weather: ${getWeatherDescription(weatherCode)}\n\n")
+        }
+
+        forecastTextView.text = forecastBuilder.toString()
+    }
+
+    // Example function to interpret weather codes
+    private fun getWeatherDescription(weatherCode: Int): String {
+        return when (weatherCode) {
+            0 -> "Clear sky"
+            1 -> "Mainly clear"
+            2 -> "Partly cloudy"
+            3 -> "Overcast"
+            45 -> "Fog"
+            48 -> "Depositing rime fog"
+            51 -> "Light drizzle"
+            53 -> "Moderate drizzle"
+            55 -> "Dense drizzle"
+            56 -> "Light freezing drizzle"
+            57 -> "Dense freezing drizzle"
+            61 -> "Slight rain"
+            63 -> "Moderate rain"
+            65 -> "Heavy rain"
+            66 -> "Light freezing rain"
+            67 -> "Heavy freezing rain"
+            71 -> "Slight snow fall"
+            73 -> "Moderate snow fall"
+            75 -> "Heavy snow fall"
+            77 -> "Snow grains"
+            80 -> "Slight rain showers"
+            81 -> "Moderate rain showers"
+            82 -> "Violent rain showers"
+            85 -> "Slight snow showers"
+            86 -> "Heavy snow showers"
+            95 -> "Slight or moderate thunderstorm"
+            96 -> "Thunderstorm with slight hail"
+            99 -> "Thunderstorm with heavy hail"
+            // Add more weather codes as needed
+            else -> "Unknown"
+        }
+    }
+
+
 
     private fun fetchWeatherData(latitude: Double, longitude: Double) {
         lifecycleScope.launch {
             try {
-                val response = RetrofitClient.instance.getHourlyTemperature(latitude, longitude)
-                updateLineChart(response)
+                val response = RetrofitClient.instance.getForecast(
+                    latitude = latitude,
+                    longitude = longitude,
+                    daily = "weathercode,temperature_2m_max,temperature_2m_min",
+                    timezone = "auto"
+                )
+                findNearestCity(latitude, longitude, cities)?.let {
+                    updateDailyForecastUI(response,
+                        it
+                    )
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
+                forecastTextView.text = "Error fetching weather data."
             }
         }
     }
 
+
+
+    //    private fun fetchDailyForecast(latitude: Double, longitude: Double) {
+//        lifecycleScope.launch {
+//            try {
+//                val response = RetrofitClient.instance.getDailyForecast(latitude, longitude)
+//                updateUI(response)
+//            } catch (e: Exception) {
+//                e.printStackTrace()
+//                forecastTextView.text = "Error fetching daily forecast."
+//            }
+//        }
+//    }
     private fun fetchHourlyTemperatureData(latitude: Double, longitude: Double) {
         lifecycleScope.launch {
             try {
-                val response = RetrofitClient.instance.getHourlyTemperature(latitude, longitude)
-                updateLineChart(response)
+                val response = RetrofitClient.instance.getHourlyTemperature(
+                    latitude = latitude,
+                    longitude = longitude,
+                    hourly = "temperature_2m",
+                    timezone = "auto"
+                )
+                updateHourlyForecastUI(response)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
     }
-    private fun updateLineChart(response: HourlyForecastResponse) {
-        val hourlyTemperature = response.hourly.temperature_2m
-        val hourlyTimes = response.hourly.time.map { parseHourlyTime(it) }
 
+
+
+    private fun updateLineChart(hourlyForecastResponse: HourlyForecastResponse) {
+        val lineChart = findViewById<LineChart>(R.id.chart1)
         val entries = mutableListOf<Entry>()
-        hourlyTimes.forEachIndexed { index, time ->
-            entries.add(Entry(time.toFloat(), hourlyTemperature[index].toFloat()))
+
+        hourlyForecastResponse.hourly.time.forEachIndexed { index, time ->
+            val temperature = hourlyForecastResponse.hourly.temperature_2m[index].toFloat()
+            entries.add(Entry(index.toFloat(), temperature))
         }
 
         val dataSet = LineDataSet(entries, "Temperature")
         dataSet.color = Color.BLUE
-        dataSet.setCircleColor(Color.BLUE)
-        dataSet.lineWidth = 2f
-        dataSet.circleRadius = 4f
-        dataSet.mode = LineDataSet.Mode.CUBIC_BEZIER
-        dataSet.setDrawValues(false)
+        dataSet.valueTextColor = Color.WHITE
+        dataSet.valueTextSize = 12f
 
-        val data = LineData(dataSet)
-        chart1.data = data
-
-        chart1.xAxis.valueFormatter = object : ValueFormatter() {
-            override fun getFormattedValue(value: Float): String {
-                return formatHourlyTime(value.toLong())
-            }
-        }
-
-        chart1.xAxis.position = XAxis.XAxisPosition.BOTTOM
-        chart1.xAxis.granularity = 1f
-        chart1.xAxis.labelCount = 6
-
-        chart1.axisRight.isEnabled = false
-        chart1.axisLeft.granularity = 1f
-
-        chart1.description.isEnabled = false
-        chart1.legend.isEnabled = false
-        chart1.invalidate()
+        val lineData = LineData(dataSet)
+        lineChart.data = lineData
+        lineChart.invalidate()  // Refresh chart
     }
+
 
     private fun parseHourlyTime(timeString: String): Long {
         val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm", Locale.getDefault())

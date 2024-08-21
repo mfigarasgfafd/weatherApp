@@ -31,11 +31,11 @@
         <!-- Just the temperature number -->
         <TextView
             android:id="@+id/bigTempView"
-            android:layout_width="95dp"
-            android:layout_height="62dp"
+            android:layout_width="172dp"
+            android:layout_height="70dp"
             android:text="25°C"
-            android:textSize="48sp"
             android:textColor="@android:color/white"
+            android:textSize="48sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.167"
@@ -72,6 +72,20 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/bigTempView"
             app:layout_constraintVertical_bias="0.102" />
+
+        <TextView
+            android:id="@+id/smallTemps"
+            android:layout_width="67dp"
+            android:layout_height="13dp"
+            android:text="temps"
+            android:textColor="@android:color/white"
+            android:textSize="10sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.159"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/bigTempView"
+            app:layout_constraintVertical_bias="0.142" />
 
         <!-- MPChart line graph for the currently selected city, side-scrolling -->
         <com.github.mikephil.charting.charts.LineChart
