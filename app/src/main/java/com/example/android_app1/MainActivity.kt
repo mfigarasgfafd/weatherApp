@@ -89,6 +89,13 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
         drawerLayout = findViewById(R.id.drawer_layout)
         navView = findViewById(R.id.navigation_view)
 
+        chart1.axisLeft.setDrawGridLines(false)
+        chart1.xAxis.setDrawGridLines(false);
+        chart1.axisRight.setDrawGridLines(false);
+        chart1.xAxis.setLabelCount(5, /*force: */true)
+        chart1.xAxis.axisMinimum = 0.0f
+        chart1.xAxis.axisMaximum = 24.0f
+        // set fill below graph
 
         // Load cities from CSV and create city chips
         loadCitiesFromCsv()
