@@ -9,7 +9,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Bundle
-import android.view.GestureDetector
 import android.view.MotionEvent
 import android.widget.ImageButton
 import android.widget.TextView
@@ -43,11 +42,14 @@ import android.view.View
 import android.view.animation.AnimationUtils
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.ScrollView
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.graphics.ColorUtils
 import com.google.android.gms.tasks.OnSuccessListener
 
 
 
-class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
+class MainActivity : AppCompatActivity() {
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var navView: NavigationView
 
@@ -65,7 +67,6 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
     private var currentCity: City? = null
     private val cities = mutableListOf<City>()
 
-    private lateinit var gestureDetector: GestureDetector
     private var x1 = 0f
     private var x2 = 0f
 
@@ -90,7 +91,6 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
         hamburgerMenu = findViewById(R.id.hamburgerMenu)
 
 
-        gestureDetector = GestureDetector(this, this)
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
@@ -152,30 +152,11 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
 //
 //        fetchWeatherData(latitude, longitude)
 //        fetchHourlyTemperatureData(latitude, longitude)
+        setupScrollListener()
 
     }
 
-    override fun onDown(p0: MotionEvent): Boolean {
-        return false
-    }
 
-    override fun onShowPress(p0: MotionEvent) {
-    }
-
-    override fun onSingleTapUp(p0: MotionEvent): Boolean {
-        return false
-    }
-
-    override fun onScroll(p0: MotionEvent, p1: MotionEvent, p2: Float, p3: Float): Boolean {
-        return false
-    }
-
-    override fun onLongPress(p0: MotionEvent) {
-    }
-
-    override fun onFling(p0: MotionEvent, p1: MotionEvent, p2: Float, p3: Float): Boolean {
-        return false
-    }
 
 
     private fun requestLocationPermission() {
@@ -548,10 +529,7 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
 
     private fun loadCitiesIntoDrawer() {
         val menu = navView.menu
-
         menu.clear()
-
-        // Load cities from CSV
         loadCitiesFromCsv()
 
         // Add each city as a menu item
@@ -568,7 +546,23 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
     }
 
 
+    // TODO: fix flickering on letting go of scroll
+    private fun setupScrollListener() {
+        val scrollView = findViewById<ScrollView>(R.id.mainScrollView)
+        val constraintLayout = findViewById<ConstraintLayout>(R.id.mainConstraintLayout)
 
+        scrollView.viewTreeObserver.addOnScrollChangedListener {
+            val scrollY = scrollView.scrollY
+            val maxScroll = scrollView.getChildAt(0).height - scrollView.height
+
+            if (maxScroll > 0) {
+                val scrollFraction = scrollY.toFloat() / maxScroll
+                val baseColor = getColor(R.color.skyblue_background)
+                val darkenedColor = ColorUtils.blendARGB(baseColor, Color.BLACK, scrollFraction)
+                constraintLayout.setBackgroundColor(darkenedColor)
+            }
+        }
+    }
 
 
 

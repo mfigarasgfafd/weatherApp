@@ -12,15 +12,18 @@
 
     <!-- Main content -->
     <ScrollView
+        android:id="@+id/mainScrollView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+
+
         android:background="@color/skyblue_background">
 
 
     <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/mainConstraintLayout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@color/skyblue_background">
+        android:layout_height="match_parent">
 
         <!--            android:visibility="gone"-->
 
