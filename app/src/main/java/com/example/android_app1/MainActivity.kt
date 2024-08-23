@@ -135,19 +135,14 @@ class MainActivity : AppCompatActivity() {
                     // Handle Settings click
                     Toast.makeText(this, "Settings clicked", Toast.LENGTH_SHORT).show()
                 }
-//                R.id.nav_about -> {
-//                    // Handle About click
-//                    Toast.makeText(this, "About clicked", Toast.LENGTH_SHORT).show()
-//                }
+
             }
             // Close the drawer after item is clicked
             drawerLayout.closeDrawer(GravityCompat.START)
             true
         }
 
-        // Example latitude and longitude for New York ((TEMPORARY))
-//        val latitude = 40.7128
-//        val longitude = -74.0060
+
         getLastKnownLocation()
 //
 //        fetchWeatherData(latitude, longitude)
@@ -245,18 +240,6 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
-        val R = 6371 // Earth's radius in kilometers
-        val latDistance = Math.toRadians(lat2 - lat1)
-        val lonDistance = Math.toRadians(lon2 - lon1)
-        val a = sin(latDistance / 2) * sin(latDistance / 2) +
-                cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) *
-                sin(lonDistance / 2) * sin(lonDistance / 2)
-        val c = 2 * atan2(sqrt(a), sqrt(1 - a))
-        return R * c
-    }
-
-
     private fun loadCitiesFromCsv() {
         val inputStream = assets.open("olym.csv")
         val reader = BufferedReader(InputStreamReader(inputStream))
@@ -319,15 +302,6 @@ class MainActivity : AppCompatActivity() {
         updateLineChart(hourlyForecastResponse)
     }
 
-//    private fun updateUI(forecastResponse: ForecastResponse, city: City) {
-//        bigTempView.text = "Max Temperature: ${forecastResponse.daily.temperature_2m_max.first()}°C"
-//        weatherStatus.text = "Weather: ${getWeatherDescription(forecastResponse.daily.weathercode.first())}"
-//        locationText.text = city.name
-//        updateLineChart(forecastResponse)  // Make sure this method is defined to handle ForecastResponse if needed
-//        updateForecastTable(forecastResponse)
-//    }
-//
-
 
 
 
@@ -351,7 +325,6 @@ class MainActivity : AppCompatActivity() {
         forecastTextView.text = forecastBuilder.toString()
     }
 
-    // Example function to interpret weather codes
     private fun getWeatherDescription(weatherCode: Int): String {
         return when (weatherCode) {
             0 -> "Clear sky"
@@ -410,19 +383,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-
-
-    //    private fun fetchDailyForecast(latitude: Double, longitude: Double) {
-//        lifecycleScope.launch {
-//            try {
-//                val response = RetrofitClient.instance.getDailyForecast(latitude, longitude)
-//                updateUI(response)
-//            } catch (e: Exception) {
-//                e.printStackTrace()
-//                forecastTextView.text = "Error fetching daily forecast."
-//            }
-//        }
-//    }
     private fun fetchHourlyTemperatureData(latitude: Double, longitude: Double) {
         lifecycleScope.launch {
             try {
@@ -502,19 +462,6 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-
-    private fun parseHourlyTime(timeString: String): Long {
-        val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm", Locale.getDefault())
-        val date = sdf.parse(timeString)
-        return date?.time ?: 0
-    }
-
-    private fun formatHourlyTime(timeInMillis: Long): String {
-        val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
-        return sdf.format(Date(timeInMillis))
-    }
-
-
     private fun openSidebar() {
         drawerLayout.openDrawer(GravityCompat.START)
     }
@@ -563,10 +510,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-
-
-
-
 
 
 
