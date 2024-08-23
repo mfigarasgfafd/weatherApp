@@ -41,10 +41,10 @@
             android:textSize="48sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.255"
+            app:layout_constraintHorizontal_bias="0.192"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.118" />
+            app:layout_constraintVertical_bias="0.128" />
 
         <TextView
             android:id="@+id/weatherStatus"
@@ -74,9 +74,10 @@
             app:layout_constraintHorizontal_bias="0.169"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/bigTempView"
-            app:layout_constraintVertical_bias="0.079" />
+            app:layout_constraintVertical_bias="0.069" />
 
         <!-- MPChart line graph for the currently selected city, side-scrolling -->
+
         <TextView
             android:id="@+id/smallTemps"
             android:layout_width="67dp"
@@ -86,10 +87,10 @@
             android:textSize="10sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.159"
+            app:layout_constraintHorizontal_bias="0.169"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/bigTempView"
-            app:layout_constraintVertical_bias="0.129" />
+            app:layout_constraintVertical_bias="0.114" />
 
         <com.github.mikephil.charting.charts.LineChart
             android:id="@+id/chart1"

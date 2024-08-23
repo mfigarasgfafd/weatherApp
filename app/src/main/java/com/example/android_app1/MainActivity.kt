@@ -327,9 +327,9 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
 
             // Add data to the string
             forecastBuilder.append("Date: $time\n")
-                .append("Max Temp: ${maxTemp}°C\n")
-                .append("Min Temp: ${minTemp}°C\n")
-                .append("Weather: ${getWeatherDescription(weatherCode)}\n\n")
+                .append("High: ${maxTemp}°C\n")
+                .append("Low: ${minTemp}°C\n")
+                .append("${getWeatherDescription(weatherCode)}\n\n")
         }
 
         forecastTextView.text = forecastBuilder.toString()
