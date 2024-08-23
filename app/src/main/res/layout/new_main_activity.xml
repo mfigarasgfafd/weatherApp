@@ -128,6 +128,11 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/locationText" />
 
+
+<!--        tiles go here -->
+
+
+
         <LinearLayout
             android:id="@+id/forecastLinearLayout"
             android:layout_width="match_parent"

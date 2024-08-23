@@ -78,9 +78,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.new_main_activity)
 
-
-
-
         // Initialize views
         bigTempView = findViewById(R.id.bigTempView)
         weatherStatus = findViewById(R.id.weatherStatus)
@@ -106,10 +103,8 @@ class MainActivity : AppCompatActivity() {
         chart1.xAxis.setLabelCount(5, /*force: */true)
         chart1.xAxis.axisMinimum = 0.0f
         chart1.xAxis.axisMaximum = 24.0f
-        chart1.animateX(1300)
-        chart1.animateY(1000)
+        chart1.animateY(2000)
 
-        // set fill below graph
 
         // Load cities from CSV and create city chips
         loadCitiesFromCsv()
@@ -142,11 +137,8 @@ class MainActivity : AppCompatActivity() {
             true
         }
 
-
         getLastKnownLocation()
-//
-//        fetchWeatherData(latitude, longitude)
-//        fetchHourlyTemperatureData(latitude, longitude)
+
         setupScrollListener()
 
     }
@@ -303,8 +295,6 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-
-
     private fun updateForecastTable(forecastResponse: ForecastResponse) {
         val forecastTextView = findViewById<TextView>(R.id.forecastTextView)
         val forecastBuilder = StringBuilder()
@@ -315,7 +305,6 @@ class MainActivity : AppCompatActivity() {
             val minTemp = forecastResponse.daily.temperature_2m_min[index]
             val weatherCode = forecastResponse.daily.weathercode[index]
 
-            // Add data to the string
             forecastBuilder.append("Date: $time\n")
                 .append("High: ${maxTemp}°C\n")
                 .append("Low: ${minTemp}°C\n")
