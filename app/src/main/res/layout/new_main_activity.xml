@@ -9,7 +9,6 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <!-- Main content -->
 
     <!-- Main content -->
     <ScrollView
@@ -23,7 +22,22 @@
         android:layout_height="match_parent"
         android:background="@color/skyblue_background">
 
+        <!--            android:visibility="gone"-->
+
+
+
         <!-- Hamburger menu button to open the drawer -->
+
+        <ImageView
+            android:id="@+id/weatherBackgroundImageView"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_marginStart="156dp"
+            android:alpha="1"
+            android:scaleType="centerCrop"
+            app:layout_constraintBottom_toBottomOf="@+id/weatherStatus"
+            app:layout_constraintStart_toEndOf="@+id/weatherStatus" />
+
         <ImageButton
             android:id="@+id/hamburgerMenu"
             android:layout_width="wrap_content"
@@ -139,6 +153,10 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
     </ScrollView>
+
+
+
+
 
     <!-- Navigation Drawer -->
     <com.google.android.material.navigation.NavigationView

@@ -39,6 +39,9 @@ import java.util.*
 import kotlin.math.*
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
+import android.view.View
+import android.view.animation.AnimationUtils
+import android.widget.ImageView
 import android.widget.LinearLayout
 import com.google.android.gms.tasks.OnSuccessListener
 
@@ -296,8 +299,40 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
         locationText.text = city.name
         smallTemps.text = "${forecastResponse.daily.temperature_2m_max.first() }° / ${forecastResponse.daily.temperature_2m_min.first()}°"
         updateForecastTable(forecastResponse)
+
+        updateWeatherBackgroundImage(forecastResponse.daily.temperature_2m_max.first(), forecastResponse.daily.weathercode.first())
+
     }
 
+    private fun updateWeatherBackgroundImage(temperature: Double, weatherCode: Int) {
+        val weatherBackgroundImageView = findViewById<ImageView>(R.id.weatherBackgroundImageView)
+
+        val weatherDescription = getWeatherDescription(weatherCode)
+        val weatherBackgroundRes = when (weatherDescription) {
+            "Clear sky" -> R.drawable.bg_sunny
+            "Mainly clear" -> R.drawable.bg_sunny
+            "Partly cloudy" -> R.drawable.bg_overcast
+            "Overcast" -> R.drawable.bg_overcast
+            "Fog", "Depositing rime fog" -> R.drawable.bg_windy
+            "Light drizzle", "Moderate drizzle", "Dense drizzle" -> R.drawable.bg_rainy
+            "Light freezing drizzle", "Dense freezing drizzle" -> R.drawable.bg_snowy
+            "Slight rain", "Moderate rain", "Heavy rain" -> R.drawable.bg_rainy
+            "Light freezing rain", "Heavy freezing rain" -> R.drawable.bg_snowy
+            "Slight snow fall", "Moderate snow fall", "Heavy snow fall" -> R.drawable.bg_snowy
+            "Snow grains" -> R.drawable.bg_snowy
+            "Slight rain showers", "Moderate rain showers", "Violent rain showers" -> R.drawable.bg_rainy
+            "Slight snow showers", "Heavy snow showers" -> R.drawable.bg_snowy
+            "Slight or moderate thunderstorm", "Thunderstorm with slight hail", "Thunderstorm with heavy hail" -> R.drawable.bg_thunder
+            else -> R.drawable.bg_overcast // Default case if no match found
+        }
+
+        weatherBackgroundImageView.setImageResource(weatherBackgroundRes)
+
+        // Make the ImageView visible and apply the animation
+        weatherBackgroundImageView.visibility = View.VISIBLE
+        val slideInAnimation = AnimationUtils.loadAnimation(this, R.anim.slide_in_right)
+        weatherBackgroundImageView.startAnimation(slideInAnimation)
+    }
     // Update hourly forecast UI components (like the line chart)
     private fun updateHourlyForecastUI(hourlyForecastResponse: HourlyForecastResponse) {
         updateLineChart(hourlyForecastResponse)
