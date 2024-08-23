@@ -4,6 +4,7 @@ import ForecastResponse
 import HourlyForecastResponse
 import WeatherResponse
 import android.Manifest
+import android.app.ActionBar.LayoutParams
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
@@ -37,11 +38,11 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.*
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.widget.LinearLayout
 import com.google.android.gms.tasks.OnSuccessListener
 
 
-// TODO: sidebar lets you choose a city
 
 class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
     private lateinit var drawerLayout: DrawerLayout
@@ -73,6 +74,9 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.new_main_activity)
 
+
+
+
         // Initialize views
         bigTempView = findViewById(R.id.bigTempView)
         weatherStatus = findViewById(R.id.weatherStatus)
@@ -82,6 +86,7 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
         forecastTextView = findViewById(R.id.forecastTextView)
         hamburgerMenu = findViewById(R.id.hamburgerMenu)
 
+
         gestureDetector = GestureDetector(this, this)
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
@@ -89,12 +94,18 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
         drawerLayout = findViewById(R.id.drawer_layout)
         navView = findViewById(R.id.navigation_view)
 
+        loadCitiesIntoDrawer()
+
+
         chart1.axisLeft.setDrawGridLines(false)
         chart1.xAxis.setDrawGridLines(false);
         chart1.axisRight.setDrawGridLines(false);
         chart1.xAxis.setLabelCount(5, /*force: */true)
         chart1.xAxis.axisMinimum = 0.0f
         chart1.xAxis.axisMaximum = 24.0f
+        chart1.animateX(1300)
+        chart1.animateY(1000)
+
         // set fill below graph
 
         // Load cities from CSV and create city chips
@@ -121,10 +132,10 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
                     // Handle Settings click
                     Toast.makeText(this, "Settings clicked", Toast.LENGTH_SHORT).show()
                 }
-                R.id.nav_about -> {
-                    // Handle About click
-                    Toast.makeText(this, "About clicked", Toast.LENGTH_SHORT).show()
-                }
+//                R.id.nav_about -> {
+//                    // Handle About click
+//                    Toast.makeText(this, "About clicked", Toast.LENGTH_SHORT).show()
+//                }
             }
             // Close the drawer after item is clicked
             drawerLayout.closeDrawer(GravityCompat.START)
@@ -415,10 +426,10 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
 
 
     private fun updateLineChart(hourlyForecastResponse: HourlyForecastResponse) {
-        val lineChart = findViewById<LineChart>(R.id.chart1)
         val entries = mutableListOf<Entry>()
 
-        hourlyForecastResponse.hourly.time.forEachIndexed { index, time ->
+        // Plot hourly temperatures
+        hourlyForecastResponse.hourly.time.forEachIndexed { index, _ ->
             val temperature = hourlyForecastResponse.hourly.temperature_2m[index].toFloat()
             entries.add(Entry(index.toFloat(), temperature))
         }
@@ -428,10 +439,52 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
         dataSet.valueTextColor = Color.WHITE
         dataSet.valueTextSize = 12f
 
+        // Apply a light gradient under the line
+        val gradientDrawable = GradientDrawable(
+            GradientDrawable.Orientation.TOP_BOTTOM,
+            intArrayOf(Color.argb(100, 22, 22, 235), Color.TRANSPARENT) // Light blue to transparent
+        )
+        dataSet.setDrawFilled(true)
+        dataSet.fillDrawable = gradientDrawable
+
+        // Customize the chart
         val lineData = LineData(dataSet)
-        lineChart.data = lineData
-        lineChart.invalidate()  // Refresh chart
+        chart1.data = lineData
+        chart1.invalidate()  // Refresh chart
+
+        // Remove the legend
+        chart1.legend.isEnabled = false
+
+        // Disable grid lines
+        chart1.axisLeft.setDrawGridLines(false)
+        chart1.xAxis.setDrawGridLines(false)
+        chart1.axisRight.setDrawGridLines(false)
+
+        // Set up the X axis
+        chart1.xAxis.setLabelCount(5, true)
+        chart1.xAxis.axisMinimum = 0.0f
+        chart1.xAxis.axisMaximum = 24.0f
+
+        // Additional customization (optional)
+        chart1.axisLeft.textColor = Color.WHITE
+        chart1.xAxis.textColor = Color.WHITE
+        chart1.description.isEnabled = false // Remove description label
+        chart1.setTouchEnabled(true)
+        chart1.setPinchZoom(true)
+        chart1.isDragEnabled = true
+
+
+        dataSet.setDrawHighlightIndicators(false)
+        chart1.isHighlightPerDragEnabled = false
+        chart1.isHighlightPerTapEnabled = false
+
+        chart1.axisRight.isEnabled = false
+//        chart1.xAxis.setDrawLabels(false)
+////        chart1.xAxis.setDrawAxisLine(false)
+
+
     }
+
 
 
     private fun parseHourlyTime(timeString: String): Long {
@@ -457,6 +510,36 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
             super.onBackPressed()
         }
     }
+
+    private fun loadCitiesIntoDrawer() {
+        val menu = navView.menu
+
+        menu.clear()
+
+        // Load cities from CSV
+        loadCitiesFromCsv()
+
+        // Add each city as a menu item
+        cities.forEach { city ->
+            val menuItem = menu.add(city.name)
+            menuItem.setOnMenuItemClickListener {
+                currentCity = city
+                fetchWeatherData(city.latitude, city.longitude)
+                fetchHourlyTemperatureData(city.latitude, city.longitude)
+                drawerLayout.closeDrawer(GravityCompat.START)  // Close the drawer
+                true
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+
 
 }
 

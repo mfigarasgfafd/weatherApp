@@ -29,6 +29,9 @@
             app:layout_constraintTop_toTopOf="parent" />
 
         <!-- Just the temperature number -->
+
+        <!-- Interpreted weather status -->
+
         <TextView
             android:id="@+id/bigTempView"
             android:layout_width="172dp"
@@ -38,12 +41,11 @@
             android:textSize="48sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.167"
+            app:layout_constraintHorizontal_bias="0.255"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.071" />
+            app:layout_constraintVertical_bias="0.118" />
 
-        <!-- Interpreted weather status -->
         <TextView
             android:id="@+id/weatherStatus"
             android:layout_width="wrap_content"
@@ -59,20 +61,22 @@
             app:layout_constraintVertical_bias="0.357" />
 
         <!-- Location -->
+
         <TextView
             android:id="@+id/locationText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="New York"
-            android:textSize="20sp"
             android:textColor="@android:color/white"
+            android:textSize="20sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.159"
+            app:layout_constraintHorizontal_bias="0.169"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/bigTempView"
-            app:layout_constraintVertical_bias="0.102" />
+            app:layout_constraintVertical_bias="0.079" />
 
+        <!-- MPChart line graph for the currently selected city, side-scrolling -->
         <TextView
             android:id="@+id/smallTemps"
             android:layout_width="67dp"
@@ -85,9 +89,8 @@
             app:layout_constraintHorizontal_bias="0.159"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/bigTempView"
-            app:layout_constraintVertical_bias="0.142" />
+            app:layout_constraintVertical_bias="0.129" />
 
-        <!-- MPChart line graph for the currently selected city, side-scrolling -->
         <com.github.mikephil.charting.charts.LineChart
             android:id="@+id/chart1"
             android:layout_width="0dp"
@@ -98,6 +101,7 @@
             app:layout_constraintBottom_toTopOf="@+id/forecastScrollView"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
+
 
         <!-- Table with 7-day forecast -->
         <ScrollView
