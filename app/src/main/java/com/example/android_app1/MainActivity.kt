@@ -5,6 +5,7 @@ import HourlyForecastResponse
 import WeatherResponse
 import android.Manifest
 import android.app.ActionBar.LayoutParams
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
@@ -38,6 +39,7 @@ import java.util.*
 import kotlin.math.*
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
+import android.util.AttributeSet
 import android.view.View
 import android.view.animation.AnimationUtils
 import android.widget.ImageView
@@ -482,21 +484,28 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    // TODO: fix flickering on letting go of scroll
+    // flicker fix: limit the distance of single swipe scroll, no matter how much you drag scroll distance is always the same
     private fun setupScrollListener() {
         val scrollView = findViewById<ScrollView>(R.id.mainScrollView)
+        val bufferDistance = 10
         val constraintLayout = findViewById<ConstraintLayout>(R.id.mainConstraintLayout)
 
         scrollView.viewTreeObserver.addOnScrollChangedListener {
-            val scrollY = scrollView.scrollY
             val maxScroll = scrollView.getChildAt(0).height - scrollView.height
 
+            val scrollY = scrollView.scrollY
+            val maxScrollY = scrollView.getChildAt(0).height - scrollView.height
+
+            if (scrollY >= maxScrollY - bufferDistance) {
+                scrollView.scrollTo(0, maxScrollY - bufferDistance)
+            }
             if (maxScroll > 0) {
                 val scrollFraction = scrollY.toFloat() / maxScroll
                 val baseColor = getColor(R.color.skyblue_background)
                 val darkenedColor = ColorUtils.blendARGB(baseColor, Color.BLACK, scrollFraction)
                 constraintLayout.setBackgroundColor(darkenedColor)
             }
+
         }
     }
 
