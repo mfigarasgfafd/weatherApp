@@ -28,16 +28,19 @@ import java.io.InputStreamReader
 import kotlin.math.*
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
+import android.icu.text.SimpleDateFormat
 import android.view.View
 import android.view.animation.AnimationUtils
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.ScrollView
 import androidx.appcompat.widget.SearchView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.graphics.ColorUtils
 import com.google.android.gms.tasks.OnSuccessListener
-
-
+import java.util.Locale
+import android.os.Build
+import android.view.WindowInsetsController
 
 class MainActivity : AppCompatActivity() {
     private lateinit var drawerLayout: DrawerLayout
@@ -77,7 +80,7 @@ class MainActivity : AppCompatActivity() {
         smallTemps = findViewById(R.id.smallTemps)
         locationText = findViewById(R.id.locationText)
         chart1 = findViewById(R.id.chart1)
-        forecastTextView = findViewById(R.id.forecastTextView)
+//        forecastTextView = findViewById(R.id.forecastTextView)
         hamburgerMenu = findViewById(R.id.hamburgerMenu)
 
 
@@ -305,22 +308,31 @@ class MainActivity : AppCompatActivity() {
 
 
     private fun updateForecastTable(forecastResponse: ForecastResponse) {
-        val forecastTextView = findViewById<TextView>(R.id.forecastTextView)
-        val forecastBuilder = StringBuilder()
+        val forecastLinearLayout = findViewById<LinearLayout>(R.id.forecastLinearLayout)
+        forecastLinearLayout.removeAllViews() // Clear existing views
 
-        // Build a string to display the 7-day forecast
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val dayFormat = SimpleDateFormat("EEEE", Locale.getDefault()) // For day of week
+
         forecastResponse.daily.time.forEachIndexed { index, time ->
+            val date = dateFormat.parse(time)
+            val dayOfWeek = dayFormat.format(date)
             val maxTemp = forecastResponse.daily.temperature_2m_max[index]
             val minTemp = forecastResponse.daily.temperature_2m_min[index]
             val weatherCode = forecastResponse.daily.weathercode[index]
 
-            forecastBuilder.append("Date: $time\n")
-                .append("High: ${maxTemp}°C\n")
-                .append("Low: ${minTemp}°C\n")
-                .append("${getWeatherDescription(weatherCode)}\n\n")
-        }
+            val forecastItemView = layoutInflater.inflate(R.layout.forecast_item, forecastLinearLayout, false)
 
-        forecastTextView.text = forecastBuilder.toString()
+            forecastItemView.findViewById<TextView>(R.id.dayOfWeekTextView).text = "${dayOfWeek}"
+            forecastItemView.findViewById<TextView>(R.id.temperatureTextView).text = "\t\t${maxTemp.toInt()}°/${minTemp.toInt()}°"
+            forecastItemView.findViewById<TextView>(R.id.weatherDescriptionTextView).text = "\t${
+                getWeatherDescription(
+                    weatherCode
+                )
+            }"
+
+            forecastLinearLayout.addView(forecastItemView)
+        }
     }
 
     private fun getWeatherDescription(weatherCode: Int): String {
@@ -520,28 +532,49 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
-    // flicker fix: limit the distance of single swipe scroll, no matter how much you drag scroll distance is always the same
     private fun setupScrollListener() {
         val scrollView = findViewById<ScrollView>(R.id.mainScrollView)
-        val bufferDistance = 10
         val constraintLayout = findViewById<ConstraintLayout>(R.id.mainConstraintLayout)
 
         scrollView.viewTreeObserver.addOnScrollChangedListener {
             val maxScroll = scrollView.getChildAt(0).height - scrollView.height
-
             val scrollY = scrollView.scrollY
-            val maxScrollY = scrollView.getChildAt(0).height - scrollView.height
 
-            if (scrollY >= maxScrollY - bufferDistance) {
-                scrollView.scrollTo(0, maxScrollY - bufferDistance)
-            }
             if (maxScroll > 0) {
                 val scrollFraction = scrollY.toFloat() / maxScroll
                 val baseColor = getColor(R.color.skyblue_background)
                 val darkenedColor = ColorUtils.blendARGB(baseColor, Color.BLACK, scrollFraction)
-                constraintLayout.setBackgroundColor(darkenedColor)
-            }
 
+                // Fade the background color of the layout
+                constraintLayout.setBackgroundColor(darkenedColor)
+
+                // Fade the status bar color
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    window.statusBarColor = darkenedColor
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        // optional
+                        val insetsController = window.insetsController
+                        if (insetsController != null) {
+                            val isLight = ColorUtils.calculateLuminance(darkenedColor) > 0.5
+                            insetsController.setSystemBarsAppearance(
+                                if (isLight) WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS else 0,
+                                WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                            )
+                        }
+                    } else {
+                        // android before ver. R
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                            val decorView = window.decorView
+                            if (ColorUtils.calculateLuminance(darkenedColor) > 0.5) {
+                                decorView.systemUiVisibility = decorView.systemUiVisibility or View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+                            } else {
+                                decorView.systemUiVisibility = decorView.systemUiVisibility and View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 

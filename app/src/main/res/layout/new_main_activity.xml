@@ -92,6 +92,8 @@
                 app:layout_constraintVertical_bias="0.029" />
 
             <!-- Small temps text -->
+
+            <!-- MPChart line graph -->
             <TextView
                 android:id="@+id/smallTemps"
                 android:layout_width="67dp"
@@ -101,12 +103,11 @@
                 android:textSize="10sp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintHorizontal_bias="0.159"
+                app:layout_constraintHorizontal_bias="0.177"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/bigTempView"
-                app:layout_constraintVertical_bias="0.054" />
+                app:layout_constraintVertical_bias="0.06" />
 
-            <!-- MPChart line graph -->
             <com.github.mikephil.charting.charts.LineChart
                 android:id="@+id/chart1"
                 android:layout_width="0dp"
@@ -128,16 +129,7 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/chart1">
-
                 <!-- Forecast items will be added dynamically -->
-                <TextView
-                    android:id="@+id/forecastTextView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="7-day forecast will be here"
-                    android:textColor="@android:color/white"
-                    android:textSize="16sp" />
-
             </LinearLayout>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
