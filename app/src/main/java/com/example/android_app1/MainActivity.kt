@@ -41,6 +41,7 @@ import com.google.android.gms.tasks.OnSuccessListener
 import java.util.Locale
 import android.os.Build
 import android.view.WindowInsetsController
+import android.widget.Button
 
 class MainActivity : AppCompatActivity() {
     private lateinit var drawerLayout: DrawerLayout
@@ -121,7 +122,15 @@ class MainActivity : AppCompatActivity() {
         loadCitiesFromCsv()
 
         // Request location permission
-        requestLocationPermission()
+
+
+
+        val requestLocationButton: Button = findViewById(R.id.requestLocationButton)
+
+        // Set an OnClickListener on the button to call requestLocationPermission()
+        requestLocationButton.setOnClickListener {
+            requestLocationPermission()
+        }
 
         // Set hamburger menu click listener
         hamburgerMenu.setOnClickListener {
@@ -148,15 +157,35 @@ class MainActivity : AppCompatActivity() {
             true
         }
 
-        getLastKnownLocation()
+
+//        getLastKnownLocation()
         initializeDrawer()
 
         setupScrollListener()
+        val lastCityName = getLastSelectedCity()
 
+        if (lastCityName != null) {
+            // Use city name to find the city and load weather data
+            val lastCity = findCityByName(lastCityName)
+            if (lastCity != null) {
+                loadWeatherForCity(lastCity)
+            } else {
+                getLastKnownLocation()
+            }
+        } else {
+            getLastKnownLocation()
+        }
     }
 
+    private fun findCityByName(cityName: String): City? {
+        return cities.find { it.name.equals(cityName, ignoreCase = true) }
+    }
 
-
+    private fun loadWeatherForCity(city: City) {
+        // Fetch weather data and hourly temperature data for the selected city
+        fetchWeatherData(city.latitude, city.longitude)
+        fetchHourlyTemperatureData(city.latitude, city.longitude)
+    }
 
     private fun requestLocationPermission() {
         if (ContextCompat.checkSelfPermission(
@@ -470,6 +499,12 @@ class MainActivity : AppCompatActivity() {
 
 
     }
+    private fun saveSelectedCity(cityName: String) {
+        val sharedPreferences = getSharedPreferences("WeatherAppPreferences", MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+        editor.putString("LastSelectedCity", cityName)
+        editor.apply()
+    }
 
 
     private fun openSidebar() {
@@ -495,6 +530,7 @@ class MainActivity : AppCompatActivity() {
                 setOnMenuItemClickListener {
                     // Handle city selection
                     currentCity = city
+                    saveSelectedCity(city.name)
                     fetchWeatherData(city.latitude, city.longitude)
                     fetchHourlyTemperatureData(city.latitude, city.longitude)
                     drawerLayout.closeDrawer(GravityCompat.START)
@@ -503,6 +539,13 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun getLastSelectedCity(): String? {
+        val sharedPreferences = getSharedPreferences("WeatherAppPreferences", MODE_PRIVATE)
+        return sharedPreferences.getString("LastSelectedCity", null)
+    }
+
+
     private fun initializeDrawer() {
         loadCitiesIntoDrawer(cities)  // Load all cities initially
         setupSearchView()

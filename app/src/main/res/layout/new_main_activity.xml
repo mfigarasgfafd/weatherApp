@@ -36,7 +36,7 @@
 
 
             <!-- Weather background image -->
-            <ImageView
+                <ImageView
                 android:id="@+id/weatherBackgroundImageView"
                 android:layout_width="100dp"
                 android:layout_height="100dp"
@@ -66,7 +66,7 @@
                 android:id="@+id/weatherStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Sunny"
+                android:text="Loading.."
                 android:textColor="@android:color/white"
                 android:textSize="18sp"
                 app:layout_constraintBottom_toTopOf="@+id/locationText"
@@ -81,7 +81,7 @@
                 android:id="@+id/locationText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="New York"
+                android:text="Loading.."
                 android:textColor="@android:color/white"
                 android:textSize="20sp"
                 app:layout_constraintBottom_toBottomOf="parent"
@@ -94,6 +94,16 @@
             <!-- Small temps text -->
 
             <!-- MPChart line graph -->
+            <Button
+                android:id="@+id/requestLocationButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginEnd="144dp"
+                android:text="Request Location"
+                app:layout_constraintBottom_toTopOf="@+id/chart1"
+                app:layout_constraintEnd_toEndOf="parent" />
+
             <TextView
                 android:id="@+id/smallTemps"
                 android:layout_width="67dp"
