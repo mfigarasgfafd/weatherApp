@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">android_app1</string>
+    <string name="channel_name">Weather Updates</string>
+    <string name="channel_description">Hourly weather updates for your selected city</string>
 </resources>

@@ -3,6 +3,8 @@ package com.example.android_app1
 import ForecastResponse
 import HourlyForecastResponse
 import android.Manifest
+import android.app.NotificationManager
+import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Bundle
@@ -42,8 +44,22 @@ import java.util.Locale
 import android.os.Build
 import android.view.WindowInsetsController
 import android.widget.Button
+import androidx.core.app.NotificationCompat
+import androidx.work.*
+import java.util.concurrent.TimeUnit
+import android.app.NotificationChannel
+import com.github.matteobattilana.weather.PrecipType
+import com.github.matteobattilana.weather.WeatherView
+
 
 class MainActivity : AppCompatActivity() {
+
+    private lateinit var notificationManager: NotificationManager
+    private val CHANNEL_ID = "WeatherChannel"
+    private val NOTIFICATION_ID = 1
+    private val WORK_NAME = "WeatherUpdateWork"
+
+
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var navView: NavigationView
 
@@ -58,6 +74,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var chart1: LineChart
     private lateinit var forecastTextView: TextView
     private lateinit var hamburgerMenu: ImageButton
+    private  lateinit var weatherView: WeatherView
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private val LOCATION_PERMISSION_REQUEST_CODE = 1
@@ -84,13 +101,15 @@ class MainActivity : AppCompatActivity() {
 //        forecastTextView = findViewById(R.id.forecastTextView)
         hamburgerMenu = findViewById(R.id.hamburgerMenu)
 
-
+        weatherView = findViewById<WeatherView>(R.id.weather_view)
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         drawerLayout = findViewById(R.id.drawer_layout)
         navView = findViewById(R.id.navigation_view)
         loadCitiesIntoDrawer(cities)
+
+
 
 
         val searchView = navView.getHeaderView(0).findViewById<SearchView>(R.id.search_view)
@@ -164,6 +183,8 @@ class MainActivity : AppCompatActivity() {
         setupScrollListener()
         val lastCityName = getLastSelectedCity()
 
+//val lastCityName = getLastSelectedCity()?.let { findCityByName(it) }
+
         if (lastCityName != null) {
             // Use city name to find the city and load weather data
             val lastCity = findCityByName(lastCityName)
@@ -175,6 +196,19 @@ class MainActivity : AppCompatActivity() {
         } else {
             getLastKnownLocation()
         }
+
+
+
+
+        notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        createNotificationChannel()
+
+        findViewById<Button>(R.id.enableNotificationsButton).setOnClickListener {
+            toggleNotifications()
+        }
+
+
+
     }
 
     private fun findCityByName(cityName: String): City? {
@@ -246,7 +280,49 @@ class MainActivity : AppCompatActivity() {
     }
 
 
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val name = getString(R.string.channel_name)
+            val descriptionText = getString(R.string.channel_description)
+            val importance = NotificationManager.IMPORTANCE_DEFAULT
+            val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
+                description = descriptionText
+            }
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
 
+    private fun toggleNotifications() {
+        val workManager = WorkManager.getInstance(applicationContext)
+
+        if (isWorkScheduled(WORK_NAME)) {
+            // Cancel the work if it's already scheduled
+            workManager.cancelUniqueWork(WORK_NAME)
+            findViewById<Button>(R.id.enableNotificationsButton).text = "Enable Notifications"
+        } else {
+            // Schedule the work
+            val constraints = Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build()
+
+            val weatherUpdateWork = PeriodicWorkRequestBuilder<WeatherUpdateWorker>(15, TimeUnit.MINUTES)
+                .setConstraints(constraints)
+                .build()
+
+            workManager.enqueueUniquePeriodicWork(
+                WORK_NAME,
+                ExistingPeriodicWorkPolicy.REPLACE,
+                weatherUpdateWork
+            )
+            findViewById<Button>(R.id.enableNotificationsButton).text = "Disable Notifications"
+        }
+    }
+
+    private fun isWorkScheduled(workName: String): Boolean {
+        val instance = WorkManager.getInstance(applicationContext)
+        val statuses = instance.getWorkInfosForUniqueWork(workName).get()
+        return statuses.any { !it.state.isFinished }
+    }
 
     fun findNearestCity(currentLatitude: Double, currentLongitude: Double, cities: List<City>): City? {
         var nearestCity: City? = null
@@ -291,6 +367,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateDailyForecastUI(forecastResponse: ForecastResponse, city: City) {
+
+
         bigTempView.text = "${forecastResponse.daily.temperature_2m_min.first()}°C"
         weatherStatus.text = "${getWeatherDescription(forecastResponse.daily.weathercode.first())}"
         locationText.text = city.name
@@ -298,7 +376,11 @@ class MainActivity : AppCompatActivity() {
         updateForecastTable(forecastResponse)
 
         updateWeatherBackgroundImage(forecastResponse.daily.temperature_2m_max.first(), forecastResponse.daily.weathercode.first())
-
+        if (("rain") in weatherStatus.text ) {
+            weatherView.setWeatherData(PrecipType.RAIN);
+        }else{
+            weatherView.setWeatherData(PrecipType.CLEAR);
+        }
     }
 
     private fun updateWeatherBackgroundImage(temperature: Double, weatherCode: Int) {
@@ -623,5 +705,9 @@ class MainActivity : AppCompatActivity() {
 
 
 
+
 }
+
+
+
 

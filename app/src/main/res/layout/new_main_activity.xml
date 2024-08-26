@@ -15,10 +15,14 @@
         android:layout_height="match_parent"
         android:background="@color/skyblue_background">
 
+
+
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/mainConstraintLayout"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
+
+
 
             <!-- Hamburger menu button to open the drawer -->
             <ImageButton
@@ -33,10 +37,21 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
-
-
             <!-- Weather background image -->
-                <ImageView
+            <com.github.matteobattilana.weather.WeatherView
+                android:id="@+id/weather_view"
+                android:layout_width="471dp"
+                android:layout_height="845dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.25"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="0.036" />
+
+            <ImageView
                 android:id="@+id/weatherBackgroundImageView"
                 android:layout_width="100dp"
                 android:layout_height="100dp"
@@ -95,11 +110,21 @@
 
             <!-- MPChart line graph -->
             <Button
+                android:id="@+id/enableNotificationsButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Enable Notifications"
+                app:layout_constraintBottom_toBottomOf="@+id/requestLocationButton"
+                app:layout_constraintEnd_toEndOf="parent"
+
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/weatherBackgroundImageView" />
+            <Button
                 android:id="@+id/requestLocationButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
-                android:layout_marginEnd="144dp"
+                android:layout_marginEnd="124dp"
                 android:text="Request Location"
                 app:layout_constraintBottom_toTopOf="@+id/chart1"
                 app:layout_constraintEnd_toEndOf="parent" />

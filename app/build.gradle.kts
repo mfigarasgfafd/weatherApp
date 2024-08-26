@@ -70,5 +70,8 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
     implementation ("com.github.PhilJay:MPAndroidChart:v3.1.0")
+    implementation ("androidx.work:work-runtime-ktx:2.8.1")
+    implementation ("com.github.MatteoBattilana:WeatherView:3.0.0")
+
 
 }
