@@ -2,15 +2,10 @@ package com.example.android_app1
 
 import ForecastResponse
 import HourlyForecastResponse
-import WeatherResponse
 import android.Manifest
-import android.app.ActionBar.LayoutParams
-import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Bundle
-import android.view.MotionEvent
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
@@ -21,30 +16,23 @@ import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.lifecycleScope
 import com.github.mikephil.charting.charts.LineChart
-import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
-import com.github.mikephil.charting.formatter.ValueFormatter
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
-import com.google.android.material.chip.Chip
-import com.google.android.material.chip.ChipGroup
 import com.google.android.material.navigation.NavigationView
 import kotlinx.coroutines.launch
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import java.text.SimpleDateFormat
-import java.util.*
 import kotlin.math.*
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
-import android.util.AttributeSet
 import android.view.View
 import android.view.animation.AnimationUtils
 import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.ScrollView
+import androidx.appcompat.widget.SearchView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.graphics.ColorUtils
 import com.google.android.gms.tasks.OnSuccessListener
@@ -54,6 +42,9 @@ import com.google.android.gms.tasks.OnSuccessListener
 class MainActivity : AppCompatActivity() {
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var navView: NavigationView
+
+
+
 
     private lateinit var smallTemps: TextView
     private lateinit var weatherTextView: TextView
@@ -95,8 +86,23 @@ class MainActivity : AppCompatActivity() {
 
         drawerLayout = findViewById(R.id.drawer_layout)
         navView = findViewById(R.id.navigation_view)
+        loadCitiesIntoDrawer(cities)
 
-        loadCitiesIntoDrawer()
+
+        val searchView = navView.getHeaderView(0).findViewById<SearchView>(R.id.search_view)
+        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                return false
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                val filteredCities = cities.filter { city ->
+                    city.name.contains(newText ?: "", ignoreCase = true)
+                }
+                loadCitiesIntoDrawer(filteredCities)
+                return true
+            }
+        })
 
 
         chart1.axisLeft.setDrawGridLines(false)
@@ -140,6 +146,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         getLastKnownLocation()
+        initializeDrawer()
 
         setupScrollListener()
 
@@ -447,7 +454,7 @@ class MainActivity : AppCompatActivity() {
 
         chart1.axisRight.isEnabled = false
 //        chart1.xAxis.setDrawLabels(false)
-////        chart1.xAxis.setDrawAxisLine(false)
+        chart1.xAxis.setDrawAxisLine(false)
 
 
     }
@@ -465,24 +472,53 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadCitiesIntoDrawer() {
-        val menu = navView.menu
-        menu.clear()
-        loadCitiesFromCsv()
 
-        // Add each city as a menu item
-        cities.forEach { city ->
-            val menuItem = menu.add(city.name)
-            menuItem.setOnMenuItemClickListener {
-                currentCity = city
-                fetchWeatherData(city.latitude, city.longitude)
-                fetchHourlyTemperatureData(city.latitude, city.longitude)
-                drawerLayout.closeDrawer(GravityCompat.START)  // Close the drawer
-                true
+
+    private fun loadCitiesIntoDrawer(citiesToLoad: List<City>) {
+        val menu = navView.menu
+        menu.clear() // Clear existing items
+
+        citiesToLoad.forEach { city ->
+            menu.add(city.name).apply {
+                setOnMenuItemClickListener {
+                    // Handle city selection
+                    currentCity = city
+                    fetchWeatherData(city.latitude, city.longitude)
+                    fetchHourlyTemperatureData(city.latitude, city.longitude)
+                    drawerLayout.closeDrawer(GravityCompat.START)
+                    true
+                }
             }
         }
     }
+    private fun initializeDrawer() {
+        loadCitiesIntoDrawer(cities)  // Load all cities initially
+        setupSearchView()
+    }
+    private fun setupSearchView() {
+        val navigationView = findViewById<NavigationView>(R.id.navigation_view)
+        val searchView = navigationView.getHeaderView(0).findViewById<SearchView>(R.id.search_view)
+        searchView.onActionViewExpanded()
+        searchView.clearFocus();
 
+        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                return false
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                val filteredCities = if (newText.isNullOrBlank()) {
+                    cities  // Show all cities if search is empty
+                } else {
+                    cities.filter { city ->
+                        city.name.contains(newText, ignoreCase = true)
+                    }
+                }
+                loadCitiesIntoDrawer(filteredCities)
+                return true
+            }
+        })
+    }
 
     // flicker fix: limit the distance of single swipe scroll, no matter how much you drag scroll distance is always the same
     private fun setupScrollListener() {

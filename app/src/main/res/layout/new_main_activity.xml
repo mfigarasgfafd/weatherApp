@@ -8,37 +8,19 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-
     <!-- Main content -->
     <com.example.android_app1.AmortizedScrollView
         android:id="@+id/mainScrollView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-
-
         android:background="@color/skyblue_background">
-
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/mainConstraintLayout"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-            <!--            android:visibility="gone"-->
-
-
             <!-- Hamburger menu button to open the drawer -->
-
-            <ImageView
-                android:id="@+id/weatherBackgroundImageView"
-                android:layout_width="100dp"
-                android:layout_height="100dp"
-                android:layout_marginStart="156dp"
-                android:alpha="1"
-                android:scaleType="centerCrop"
-                app:layout_constraintBottom_toBottomOf="@+id/weatherStatus"
-                app:layout_constraintStart_toEndOf="@+id/weatherStatus" />
-
             <ImageButton
                 android:id="@+id/hamburgerMenu"
                 android:layout_width="wrap_content"
@@ -51,10 +33,20 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
+
+
+            <!-- Weather background image -->
+            <ImageView
+                android:id="@+id/weatherBackgroundImageView"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:layout_marginStart="156dp"
+                android:alpha="1"
+                android:scaleType="centerCrop"
+                app:layout_constraintBottom_toBottomOf="@+id/weatherStatus"
+                app:layout_constraintStart_toEndOf="@+id/weatherStatus" />
+
             <!-- Just the temperature number -->
-
-            <!-- Interpreted weather status -->
-
             <TextView
                 android:id="@+id/bigTempView"
                 android:layout_width="172dp"
@@ -69,6 +61,7 @@
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintVertical_bias="0.079" />
 
+            <!-- Interpreted weather status -->
             <TextView
                 android:id="@+id/weatherStatus"
                 android:layout_width="wrap_content"
@@ -84,7 +77,6 @@
                 app:layout_constraintVertical_bias="0.357" />
 
             <!-- Location -->
-
             <TextView
                 android:id="@+id/locationText"
                 android:layout_width="wrap_content"
@@ -99,9 +91,7 @@
                 app:layout_constraintTop_toBottomOf="@+id/bigTempView"
                 app:layout_constraintVertical_bias="0.029" />
 
-            <!-- MPChart line graph for the currently selected city, side-scrolling -->
-
-            <!-- Table with 7-day forecast -->
+            <!-- Small temps text -->
             <TextView
                 android:id="@+id/smallTemps"
                 android:layout_width="67dp"
@@ -116,6 +106,7 @@
                 app:layout_constraintTop_toBottomOf="@+id/bigTempView"
                 app:layout_constraintVertical_bias="0.054" />
 
+            <!-- MPChart line graph -->
             <com.github.mikephil.charting.charts.LineChart
                 android:id="@+id/chart1"
                 android:layout_width="0dp"
@@ -126,10 +117,7 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/locationText" />
 
-
-            <!--        tiles go here -->
-
-
+            <!-- LinearLayout for forecast -->
             <LinearLayout
                 android:id="@+id/forecastLinearLayout"
                 android:layout_width="match_parent"
@@ -141,7 +129,6 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/chart1">
 
-
                 <!-- Forecast items will be added dynamically -->
                 <TextView
                     android:id="@+id/forecastTextView"
@@ -151,27 +138,19 @@
                     android:textColor="@android:color/white"
                     android:textSize="16sp" />
 
-
             </LinearLayout>
-
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </com.example.android_app1.AmortizedScrollView>
 
-
-
-
-
     <!-- Navigation Drawer -->
     <com.google.android.material.navigation.NavigationView
-
         android:id="@+id/navigation_view"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_gravity="start"
-        app:menu="@drawable/drawer_menu"
         android:background="@android:color/white"
-        />
-<!-- if it starts scrolling below certain point it should accelerate the scroll speed down -->
+        app:headerLayout="@layout/nav_header"
+        app:menu="@drawable/drawer_menu" />
 
 </androidx.drawerlayout.widget.DrawerLayout>
