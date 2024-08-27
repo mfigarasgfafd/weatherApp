@@ -48,8 +48,11 @@ import androidx.core.app.NotificationCompat
 import androidx.work.*
 import java.util.concurrent.TimeUnit
 import android.app.NotificationChannel
+import android.content.Intent
+import android.net.Uri
 import com.github.matteobattilana.weather.PrecipType
 import com.github.matteobattilana.weather.WeatherView
+import com.google.android.gms.maps.MapView
 
 
 class MainActivity : AppCompatActivity() {
@@ -76,6 +79,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var forecastTextView: TextView
     private lateinit var hamburgerMenu: ImageButton
     private  lateinit var weatherView: WeatherView
+//    private lateinit var mapView: MapView
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private val LOCATION_PERMISSION_REQUEST_CODE = 1
@@ -113,7 +117,8 @@ class MainActivity : AppCompatActivity() {
         navView = findViewById(R.id.navigation_view)
         loadCitiesIntoDrawer(cities)
 
-
+//        mapView = findViewById(R.id.mapView)
+//        mapView.bringToFront();
 
 
         val searchView = navView.getHeaderView(0).findViewById<SearchView>(R.id.search_view)
@@ -187,6 +192,7 @@ class MainActivity : AppCompatActivity() {
 
         setupScrollListener()
         val lastCityName = getLastSelectedCity()
+        currentCity = lastCityName?.let { findCityByName(it) }
 
 //val lastCityName = getLastSelectedCity()?.let { findCityByName(it) }
 
@@ -212,9 +218,29 @@ class MainActivity : AppCompatActivity() {
             toggleNotifications()
         }
 
-
+        locationText.setOnClickListener {
+            currentCity?.let { it1 -> openMapView(currentCity!!.latitude, it1.longitude, currentCity!!.name) }
+        }
 
     }
+
+    private fun openMapView(latitude: Double, longitude: Double, cityName: String) {
+
+        val uri = Uri.parse("geo:$latitude,$longitude?q=$latitude,$longitude($cityName)")
+        val intent = Intent(Intent.ACTION_VIEW, uri)
+        intent.setPackage("com.google.android.apps.maps")  // Ensure the intent is handled by Google Maps
+
+        if (intent.resolveActivity(packageManager) != null) {
+            startActivity(intent)
+        } else {
+            // Handle the case where no app can handle the intent
+            Toast.makeText(this, "No map application found", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+
+
+
 
     private fun findCityByName(cityName: String): City? {
         return cities.find { it.name.equals(cityName, ignoreCase = true) }
@@ -276,6 +302,7 @@ class MainActivity : AppCompatActivity() {
                         fetchWeatherData(nearestCity.latitude, nearestCity.longitude)
                         fetchHourlyTemperatureData(nearestCity.latitude, nearestCity.longitude)
                         currentCity = nearestCity
+                        saveSelectedCity(nearestCity.name)
                     } else {
                         forecastTextView.text = "Unable to find nearest city."
                     }
@@ -400,6 +427,7 @@ class MainActivity : AppCompatActivity() {
 
         if (rain_keywords.any { it in weatherStatus.text }) {
             weatherView.setWeatherData(PrecipType.RAIN)
+
             isThunderstorm = false
         } else if (thunder_keywords.any { it in weatherStatus.text }) {
             val baseColor = getColor(R.color.skyblue_background)
