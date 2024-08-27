@@ -79,7 +79,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var forecastTextView: TextView
     private lateinit var hamburgerMenu: ImageButton
     private  lateinit var weatherView: WeatherView
-//    private lateinit var mapView: MapView
+    private lateinit var mapView: MapView
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private val LOCATION_PERMISSION_REQUEST_CODE = 1
@@ -117,8 +117,8 @@ class MainActivity : AppCompatActivity() {
         navView = findViewById(R.id.navigation_view)
         loadCitiesIntoDrawer(cities)
 
-//        mapView = findViewById(R.id.mapView)
-//        mapView.bringToFront();
+        mapView = findViewById(R.id.mapView)
+        mapView.bringToFront();
 
 
         val searchView = navView.getHeaderView(0).findViewById<SearchView>(R.id.search_view)

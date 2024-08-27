@@ -29,12 +29,12 @@
 
 
 <!--                make hidden shown on tapping location. get api key -->
-<!--                <com.google.android.gms.maps.MapView-->
-<!--                    android:id="@+id/mapView"-->
-<!--                    android:layout_width="match_parent"-->
-<!--                    android:layout_height="391dp"-->
-<!--                    android:layout_below="@+id/locationText"-->
-<!--                    ></com.google.android.gms.maps.MapView>-->
+                <com.google.android.gms.maps.MapView
+                    android:id="@+id/mapView"
+                    android:layout_width="match_parent"
+                    android:layout_height="391dp"
+                    android:layout_below="@+id/locationText"
+                    ></com.google.android.gms.maps.MapView>
 
             </LinearLayout>
             <!-- Hamburger menu button to open the drawer -->
