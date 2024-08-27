@@ -166,6 +166,7 @@ class MainActivity : AppCompatActivity() {
         navView.setNavigationItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
                 R.id.nav_home -> {
+                    // toast test
                     // Handle Home click
                     Toast.makeText(this, "Home clicked", Toast.LENGTH_SHORT).show()
                 }
@@ -303,6 +304,7 @@ class MainActivity : AppCompatActivity() {
         if (isWorkScheduled(WORK_NAME)) {
             // Cancel the work if it's already scheduled
             workManager.cancelUniqueWork(WORK_NAME)
+            Toast.makeText(this, "Notifications disabled", Toast.LENGTH_SHORT).show()
             findViewById<Button>(R.id.enableNotificationsButton).text = "Enable Notifications"
         } else {
             // Get current city location
@@ -329,6 +331,7 @@ class MainActivity : AppCompatActivity() {
                 ExistingPeriodicWorkPolicy.REPLACE,
                 weatherUpdateWork
             )
+            Toast.makeText(this, "Notifications enabled", Toast.LENGTH_SHORT).show()
             findViewById<Button>(R.id.enableNotificationsButton).text = "Disable Notifications"
         }
     }
