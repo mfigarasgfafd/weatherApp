@@ -64,6 +64,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var navView: NavigationView
 
 
+    private var isThunderstorm = false
 
 
     private lateinit var smallTemps: TextView
@@ -85,6 +86,9 @@ class MainActivity : AppCompatActivity() {
     private var x2 = 0f
 
     companion object {
+         val CHANNEL_ID = "WeatherChannel"
+         val NOTIFICATION_ID = 1
+         val WORK_NAME = "WeatherUpdateWork"
         const val MIN_DISTANCE = 150
     }
 
@@ -270,6 +274,7 @@ class MainActivity : AppCompatActivity() {
                         // Fetch weather data and hourly temperature data for the nearest city
                         fetchWeatherData(nearestCity.latitude, nearestCity.longitude)
                         fetchHourlyTemperatureData(nearestCity.latitude, nearestCity.longitude)
+                        currentCity = nearestCity
                     } else {
                         forecastTextView.text = "Unable to find nearest city."
                     }
@@ -300,12 +305,22 @@ class MainActivity : AppCompatActivity() {
             workManager.cancelUniqueWork(WORK_NAME)
             findViewById<Button>(R.id.enableNotificationsButton).text = "Enable Notifications"
         } else {
+            // Get current city location
+            val latitude = currentCity?.latitude ?: 0.0
+            val longitude = currentCity?.longitude ?: 0.0
+
             // Schedule the work
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build()
 
+            val inputData = workDataOf(
+                "latitude" to latitude,
+                "longitude" to longitude
+            )
+
             val weatherUpdateWork = PeriodicWorkRequestBuilder<WeatherUpdateWorker>(15, TimeUnit.MINUTES)
+                .setInputData(inputData)
                 .setConstraints(constraints)
                 .build()
 
@@ -317,6 +332,7 @@ class MainActivity : AppCompatActivity() {
             findViewById<Button>(R.id.enableNotificationsButton).text = "Disable Notifications"
         }
     }
+
 
     private fun isWorkScheduled(workName: String): Boolean {
         val instance = WorkManager.getInstance(applicationContext)
@@ -368,20 +384,34 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateDailyForecastUI(forecastResponse: ForecastResponse, city: City) {
 
-
         bigTempView.text = "${forecastResponse.daily.temperature_2m_min.first()}°C"
         weatherStatus.text = "${getWeatherDescription(forecastResponse.daily.weathercode.first())}"
         locationText.text = city.name
         smallTemps.text = "${forecastResponse.daily.temperature_2m_max.first() }° / ${forecastResponse.daily.temperature_2m_min.first()}°"
         updateForecastTable(forecastResponse)
-
         updateWeatherBackgroundImage(forecastResponse.daily.temperature_2m_max.first(), forecastResponse.daily.weathercode.first())
-        if (("rain") in weatherStatus.text ) {
-            weatherView.setWeatherData(PrecipType.RAIN);
-        }else{
-            weatherView.setWeatherData(PrecipType.CLEAR);
+        val constraintLayout = findViewById<ConstraintLayout>(R.id.mainConstraintLayout)
+
+        val thunder_keywords = listOf("thunder", "thunderstorm", "lightning")
+        val rain_keywords = listOf("rain", "drizzle")
+
+        if (rain_keywords.any { it in weatherStatus.text }) {
+            weatherView.setWeatherData(PrecipType.RAIN)
+            isThunderstorm = false
+        } else if (thunder_keywords.any { it in weatherStatus.text }) {
+            val baseColor = getColor(R.color.skyblue_background)
+            val darkenedColor = ColorUtils.blendARGB(baseColor, Color.BLACK, 0.5F)
+            constraintLayout.setBackgroundColor(darkenedColor)
+            window.statusBarColor = darkenedColor
+
+            weatherView.setWeatherData(PrecipType.RAIN)
+            isThunderstorm = true // Set the flag to true
+        } else {
+            weatherView.setWeatherData(PrecipType.CLEAR)
+            isThunderstorm = false
         }
     }
+
 
     private fun updateWeatherBackgroundImage(temperature: Double, weatherCode: Int) {
         val weatherBackgroundImageView = findViewById<ImageView>(R.id.weatherBackgroundImageView)
@@ -668,7 +698,11 @@ class MainActivity : AppCompatActivity() {
             if (maxScroll > 0) {
                 val scrollFraction = scrollY.toFloat() / maxScroll
                 val baseColor = getColor(R.color.skyblue_background)
-                val darkenedColor = ColorUtils.blendARGB(baseColor, Color.BLACK, scrollFraction)
+
+                // Adjust the start color based on whether it's already darkened ( thunderstorm)
+                val startColor = if (isThunderstorm) ColorUtils.blendARGB(baseColor, Color.BLACK, 0.5F) else baseColor
+
+                val darkenedColor = ColorUtils.blendARGB(startColor, Color.BLACK, scrollFraction)
 
                 // Fade the background color of the layout
                 constraintLayout.setBackgroundColor(darkenedColor)
@@ -678,17 +712,15 @@ class MainActivity : AppCompatActivity() {
                     window.statusBarColor = darkenedColor
 
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                        // optional
                         val insetsController = window.insetsController
-                        if (insetsController != null) {
-                            val isLight = ColorUtils.calculateLuminance(darkenedColor) > 0.5
-                            insetsController.setSystemBarsAppearance(
-                                if (isLight) WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS else 0,
+                        insetsController?.setSystemBarsAppearance(
+                            if (ColorUtils.calculateLuminance(darkenedColor) > 0.5)
                                 WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-                            )
-                        }
+                            else
+                                0,
+                            WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                        )
                     } else {
-                        // android before ver. R
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                             val decorView = window.decorView
                             if (ColorUtils.calculateLuminance(darkenedColor) > 0.5) {
@@ -702,6 +734,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
 
 
 
