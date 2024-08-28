@@ -22,21 +22,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="vertical">
 
-
-<!--                make hidden shown on tapping location. get api key -->
-                <com.google.android.gms.maps.MapView
-                    android:id="@+id/mapView"
-                    android:layout_width="match_parent"
-                    android:layout_height="391dp"
-                    android:layout_below="@+id/locationText"
-                    ></com.google.android.gms.maps.MapView>
-
-            </LinearLayout>
             <!-- Hamburger menu button to open the drawer -->
             <ImageButton
                 android:id="@+id/hamburgerMenu"
@@ -124,6 +110,14 @@
 
 
 
+            <Button
+                android:id="@+id/openMapButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Open Map"
+                app:layout_constraintBottom_toTopOf="@+id/enableNotificationsButton"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent" />
 
 
 

@@ -50,12 +50,22 @@ import java.util.concurrent.TimeUnit
 import android.app.NotificationChannel
 import android.content.Intent
 import android.net.Uri
+import android.view.ViewGroup
 import com.github.matteobattilana.weather.PrecipType
 import com.github.matteobattilana.weather.WeatherView
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
+import com.google.android.gms.maps.GoogleMapOptions;
+import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.LatLng
+import android.app.Fragment
 
 
-class MainActivity : AppCompatActivity() {
+
+class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private lateinit var notificationManager: NotificationManager
     private val CHANNEL_ID = "WeatherChannel"
@@ -79,13 +89,15 @@ class MainActivity : AppCompatActivity() {
     private lateinit var forecastTextView: TextView
     private lateinit var hamburgerMenu: ImageButton
     private  lateinit var weatherView: WeatherView
-    private lateinit var mapView: MapView
+//    private lateinit var mapView: MapView
 
+    private lateinit var mapFragment: SupportMapFragment
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private val LOCATION_PERMISSION_REQUEST_CODE = 1
     private var currentCity: City? = null
     private val cities = mutableListOf<City>()
-
+    private lateinit var mainLayout: ViewGroup
+    private lateinit var mapLayout: View
     private var x1 = 0f
     private var x2 = 0f
 
@@ -100,32 +112,80 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.new_main_activity)
 
+        initializeMainUIComponents()  // Centralized UI initialization
+
+        // Set up the map fragment and listener
+        mapFragment = (supportFragmentManager
+            .findFragmentById(R.id.map_fragment) as SupportMapFragment?)!!
+        mapFragment?.getMapAsync(this)
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        // Check if the map fragment was removed, if so, reinitialize the main layout
+        val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment)
+        if (mapFragment == null) {
+            // Re-initialize or reset the necessary components of MainActivity
+            setContentView(R.layout.new_main_activity)
+            initializeMainUIComponents()
+        }
+    }
+
+    fun showMapFragment() {
+        val mapFragment = SupportMapFragment.newInstance()
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.mainConstraintLayout, mapFragment)
+            .addToBackStack(null) // This ensures that pressing back returns to the previous state
+            .commit()
+    }
+
+    fun restoreMainLayout() {
+        supportFragmentManager.popBackStack() // This will pop the map fragment and return to the main layout
+        // Ensure your main layout is correctly restored
+    }
+
+
+    private fun initializeMainUIComponents() {
         // Initialize views
         bigTempView = findViewById(R.id.bigTempView)
         weatherStatus = findViewById(R.id.weatherStatus)
         smallTemps = findViewById(R.id.smallTemps)
         locationText = findViewById(R.id.locationText)
         chart1 = findViewById(R.id.chart1)
-//        forecastTextView = findViewById(R.id.forecastTextView)
         hamburgerMenu = findViewById(R.id.hamburgerMenu)
-
-        weatherView = findViewById<WeatherView>(R.id.weather_view)
-
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-
+        weatherView = findViewById(R.id.weather_view)
         drawerLayout = findViewById(R.id.drawer_layout)
         navView = findViewById(R.id.navigation_view)
+
+        // Initialize the FusedLocationProviderClient
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+
+        // Load the cities into the drawer
         loadCitiesIntoDrawer(cities)
 
-        mapView = findViewById(R.id.mapView)
-        mapView.bringToFront();
+        // Setup map layout
+        mapLayout = layoutInflater.inflate(R.layout.map_layout, null)
 
+        // Initialize buttons
+        val openMapButton = findViewById<Button>(R.id.openMapButton)
+        openMapButton.setOnClickListener {
+            openMapLayout()
+        }
 
+        val requestLocationButton: Button = findViewById(R.id.requestLocationButton)
+        requestLocationButton.setOnClickListener {
+            requestLocationPermission()
+        }
+
+        findViewById<Button>(R.id.enableNotificationsButton).setOnClickListener {
+            toggleNotifications()
+        }
+
+        // Set up search view in navigation drawer
         val searchView = navView.getHeaderView(0).findViewById<SearchView>(R.id.search_view)
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?): Boolean {
-                return false
-            }
+            override fun onQueryTextSubmit(query: String?): Boolean = false
 
             override fun onQueryTextChange(newText: String?): Boolean {
                 val filteredCities = cities.filter { city ->
@@ -136,93 +196,85 @@ class MainActivity : AppCompatActivity() {
             }
         })
 
-
+        // Setup chart
         chart1.axisLeft.setDrawGridLines(false)
-        chart1.xAxis.setDrawGridLines(false);
-        chart1.axisRight.setDrawGridLines(false);
-        chart1.xAxis.setLabelCount(5, /*force: */true)
+        chart1.xAxis.setDrawGridLines(false)
+        chart1.axisRight.setDrawGridLines(false)
+        chart1.xAxis.setLabelCount(5, true)
         chart1.xAxis.axisMinimum = 0.0f
         chart1.xAxis.axisMaximum = 24.0f
         chart1.animateY(2000)
 
-
-        // Load cities from CSV and create city chips
+        // Load cities from CSV
         loadCitiesFromCsv()
 
-        // Request location permission
+        // Initialize notification manager and create notification channel
+        notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        createNotificationChannel()
 
-
-
-        val requestLocationButton: Button = findViewById(R.id.requestLocationButton)
-
-        // Set an OnClickListener on the button to call requestLocationPermission()
-        requestLocationButton.setOnClickListener {
-            requestLocationPermission()
+        // Set up location text click listener to open the map view
+        locationText.setOnClickListener {
+            currentCity?.let { city ->
+                openMapView(city.latitude, city.longitude, city.name)
+            }
         }
 
         // Set hamburger menu click listener
         hamburgerMenu.setOnClickListener {
-            // Open the sidebar or perform related action
             openSidebar()
         }
 
-
-
+        // Setup navigation item selection listener
         navView.setNavigationItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
                 R.id.nav_home -> {
-                    // toast test
-                    // Handle Home click
                     Toast.makeText(this, "Home clicked", Toast.LENGTH_SHORT).show()
                 }
                 R.id.nav_settings -> {
-                    // Handle Settings click
                     Toast.makeText(this, "Settings clicked", Toast.LENGTH_SHORT).show()
                 }
-
             }
-            // Close the drawer after item is clicked
             drawerLayout.closeDrawer(GravityCompat.START)
             true
         }
 
-
-//        getLastKnownLocation()
-        initializeDrawer()
-
+        // Initialize the scroll listener
         setupScrollListener()
+
+        // Load the last selected city or request the last known location
         val lastCityName = getLastSelectedCity()
         currentCity = lastCityName?.let { findCityByName(it) }
 
-//val lastCityName = getLastSelectedCity()?.let { findCityByName(it) }
-
-        if (lastCityName != null) {
-            // Use city name to find the city and load weather data
-            val lastCity = findCityByName(lastCityName)
-            if (lastCity != null) {
-                loadWeatherForCity(lastCity)
-            } else {
-                getLastKnownLocation()
-            }
+        if (currentCity != null) {
+            loadWeatherForCity(currentCity!!)
         } else {
             getLastKnownLocation()
         }
 
-
-
-
-        notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        createNotificationChannel()
-
-        findViewById<Button>(R.id.enableNotificationsButton).setOnClickListener {
-            toggleNotifications()
-        }
-
-        locationText.setOnClickListener {
-            currentCity?.let { it1 -> openMapView(currentCity!!.latitude, it1.longitude, currentCity!!.name) }
-        }
-
+        // Initialize the navigation drawer
+        initializeDrawer()
     }
+
+
+
+    // begin functions
+
+    private fun openMapLayout() {
+        setContentView(mapLayout)
+
+        val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment) as SupportMapFragment
+        mapFragment.getMapAsync { googleMap ->
+            googleMap.uiSettings.isZoomControlsEnabled = true
+            googleMap.uiSettings.isCompassEnabled = true
+
+            // Example location (replace with actual data)
+            val location = LatLng(37.7749, -122.4194)
+            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 15f))
+        }
+    }
+
+
+
 
     private fun openMapView(latitude: Double, longitude: Double, cityName: String) {
 
@@ -640,6 +692,8 @@ class MainActivity : AppCompatActivity() {
 //        chart1.xAxis.setDrawLabels(false)
         chart1.xAxis.setDrawAxisLine(false)
 
+        val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment) as SupportMapFragment
+
 
     }
     private fun saveSelectedCity(cityName: String) {
@@ -657,6 +711,11 @@ class MainActivity : AppCompatActivity() {
     override fun onBackPressed() {
         if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
             drawerLayout.closeDrawer(GravityCompat.START)
+        }else if (mapFragment != null && mapFragment.isVisible) {
+            // If the map is visible, remove it and show the main UI
+            supportFragmentManager.beginTransaction().remove(mapFragment).commit()
+            // Re-load or re-initialize your main layout here if necessary
+            setContentView(R.layout.new_main_activity)
         } else {
             super.onBackPressed()
         }
@@ -766,8 +825,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-
-
+    override fun onMapReady(map: GoogleMap) {
+        // nothing
+    }
 
 
 }
