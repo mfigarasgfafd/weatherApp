@@ -101,6 +101,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var mapLayout: View
     private var x1 = 0f
     private var x2 = 0f
+    var currentToast: Toast? = null
 
     companion object {
          val CHANNEL_ID = "WeatherChannel"
@@ -115,40 +116,24 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         mapLayout = layoutInflater.inflate(R.layout.map_layout, null)
 
         initializeMainUIComponents()
-
-        // Set up the map fragment and listener
-
     }
 
     override fun onResume() {
         super.onResume()
 
         // Reinitialize main layout if the map fragment was removed
-//        val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment)
         if (mapFragment == null) {
             setContentView(R.layout.new_main_activity)
-//            initializeMainUIComponents() // seems to be the culprit if outside this if !
         }
     }
 
 
 
     fun restoreMainLayout() {
-        // Check if there's a map fragment in the back stack before popping
-
-        // this becomes null on back pressed ? seems like a re-def
-//        val mapFragment = supportFragmentManager.findFragmentByTag("map_fragment") as? SupportMapFragment
 
         setContentView(R.layout.new_main_activity)
         initializeMainUIComponents()
-        // not null? should this even be null if stack is getting popped instead of remove commit? mby pop by name???
-//        if (mapFragment != null) {
-////            supportFragmentManager.beginTransaction()
-////                .remove(mapFragment)
-////                .commit()
-//
-//            supportFragmentManager.popBackStack() // This will pop the map fragment and return to the main layout
-//        }
+
     }
 
 
@@ -170,8 +155,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         // Load the cities into the drawer
         loadCitiesIntoDrawer(cities)
 
-        // Setup map layout
-//        mapLayout = layoutInflater.inflate(R.layout.map_layout, null)
 
         mapFragment = supportFragmentManager
             .findFragmentById(R.id.map_fragment) as SupportMapFragment
@@ -261,9 +244,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             getLastKnownLocation()
         }
 
-
-
-        // Initialize the navigation drawer
         initializeDrawer()
     }
 
@@ -285,26 +265,39 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             mapFragment.getMapAsync { googleMap ->
                 googleMap.uiSettings.isZoomControlsEnabled = true
                 googleMap.uiSettings.isCompassEnabled = true
-                googleMap.setOnMapClickListener { latLng ->
-                    val latitude_local = latLng.latitude
-                    val longitude_local = latLng.longitude
-                    val nearestCity = findNearestCity(latitude_local, longitude_local, cities)
-                    val cityName = nearestCity?.name ?: "Unknown"
-                    val distanceKm = nearestCity?.let {
-                        calculateDistance(latitude_local, longitude_local, it.latitude, it.longitude)
-                    } ?: 0.0
-
-                    // Display the city name and distance in a Toast
-                    Toast.makeText(this, "City: $cityName, Distance: ${"%.2f".format(distanceKm)} km", Toast.LENGTH_SHORT).show()
-
-                    // starting location
-                //val location = LatLng(0.0, 0.0)
-                //  googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 1f))
-            }
+                guesserCore()
 
         }
     }}
 
+
+    fun guesserCore(){
+        mapFragment.getMapAsync{googleMap ->
+        googleMap.setOnMapClickListener { latLng ->
+            val latitude_local = latLng.latitude
+            val longitude_local = latLng.longitude
+            val nearestCity = findNearestCity(latitude_local, longitude_local, cities)
+            val cityName = nearestCity?.name ?: "Unknown"
+            val distanceKm = nearestCity?.let {
+                calculateDistance(latitude_local, longitude_local, it.latitude, it.longitude)
+            } ?: 0.0
+            // Display the city name and distance in a Toast
+           showToast(cityName, distanceKm)
+            // starting location
+            //val location = LatLng(0.0, 0.0)
+            //  googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 1f))
+        }
+    }
+    }
+
+    fun showToast(cityName: String, distanceKm: Double) {
+        // Cancel the current Toast if it's showing
+        currentToast?.cancel()
+
+        // Create and show the new Toast
+        currentToast = Toast.makeText(this, "City: $cityName, Distance: ${"%.2f".format(distanceKm)} km", Toast.LENGTH_SHORT)
+        currentToast?.show()
+    }
 
     fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
         val radiusOfEarthKm = 6371.0 // Radius of the Earth in kilometers
@@ -420,6 +413,9 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun toggleNotifications() {
+
+        //TODO: notification button text changes to default after entering map view, FIX IT
+
         val workManager = WorkManager.getInstance(applicationContext)
 
         if (isWorkScheduled(WORK_NAME)) {
@@ -530,7 +526,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             window.statusBarColor = darkenedColor
 
             weatherView.setWeatherData(PrecipType.RAIN)
-            isThunderstorm = true // Set the flag to true
+            isThunderstorm = true // FLAG
         } else {
             weatherView.setWeatherData(PrecipType.CLEAR)
             isThunderstorm = false
@@ -557,7 +553,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             "Slight rain showers", "Moderate rain showers", "Violent rain showers" -> R.drawable.bg_rainy
             "Slight snow showers", "Heavy snow showers" -> R.drawable.bg_snowy
             "Slight or moderate thunderstorm", "Thunderstorm with slight hail", "Thunderstorm with heavy hail" -> R.drawable.bg_thunder
-            else -> R.drawable.bg_overcast // Default case if no match found
+            else -> R.drawable.bg_overcast // no match found
         }
 
         weatherBackgroundImageView.setImageResource(weatherBackgroundRes)
