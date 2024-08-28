@@ -285,20 +285,37 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             mapFragment.getMapAsync { googleMap ->
                 googleMap.uiSettings.isZoomControlsEnabled = true
                 googleMap.uiSettings.isCompassEnabled = true
+                googleMap.setOnMapClickListener { latLng ->
+                    val latitude_local = latLng.latitude
+                    val longitude_local = latLng.longitude
+                    val nearestCity = findNearestCity(latitude_local, longitude_local, cities)
+                    val cityName = nearestCity?.name ?: "Unknown"
+                    val distanceKm = nearestCity?.let {
+                        calculateDistance(latitude_local, longitude_local, it.latitude, it.longitude)
+                    } ?: 0.0
 
-                // Example location (replace with actual data)
-                val location = LatLng(37.7749, -122.4194)
-                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 15f))
+                    // Display the city name and distance in a Toast
+                    Toast.makeText(this, "City: $cityName, Distance: ${"%.2f".format(distanceKm)} km", Toast.LENGTH_SHORT).show()
+
+                    // starting location
+                //val location = LatLng(0.0, 0.0)
+                //  googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 1f))
             }
-        } else {
-            // Handle the case where the fragment is not found or not the expected type
 
-            // WHERE NULLED
-            Log.e("MapError", "Map fragment is not found or not of the correct type.")
         }
+    }}
+
+
+    fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+        val radiusOfEarthKm = 6371.0 // Radius of the Earth in kilometers
+        val dLat = Math.toRadians(lat2 - lat1)
+        val dLon = Math.toRadians(lon2 - lon1)
+        val a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2)
+        val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+        return radiusOfEarthKm * c
     }
-
-
 
 
     private fun openMapView(latitude: Double, longitude: Double, cityName: String) {
