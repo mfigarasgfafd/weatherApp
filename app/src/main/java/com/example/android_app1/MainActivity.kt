@@ -62,7 +62,7 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import android.app.Fragment
-
+import android.util.Log
 
 
 class MainActivity : AppCompatActivity(), OnMapReadyCallback {
@@ -79,6 +79,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private var isThunderstorm = false
 
+    private lateinit var fragment: SupportMapFragment
+    private lateinit var mapFragment: SupportMapFragment
 
     private lateinit var smallTemps: TextView
     private lateinit var weatherTextView: TextView
@@ -91,7 +93,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     private  lateinit var weatherView: WeatherView
 //    private lateinit var mapView: MapView
 
-    private lateinit var mapFragment: SupportMapFragment
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private val LOCATION_PERMISSION_REQUEST_CODE = 1
     private var currentCity: City? = null
@@ -111,38 +112,43 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.new_main_activity)
+        mapLayout = layoutInflater.inflate(R.layout.map_layout, null)
 
-        initializeMainUIComponents()  // Centralized UI initialization
+        initializeMainUIComponents()
 
         // Set up the map fragment and listener
-        mapFragment = (supportFragmentManager
-            .findFragmentById(R.id.map_fragment) as SupportMapFragment?)!!
-        mapFragment?.getMapAsync(this)
+
     }
 
     override fun onResume() {
         super.onResume()
 
-        // Check if the map fragment was removed, if so, reinitialize the main layout
-        val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment)
+        // Reinitialize main layout if the map fragment was removed
+//        val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment)
         if (mapFragment == null) {
-            // Re-initialize or reset the necessary components of MainActivity
             setContentView(R.layout.new_main_activity)
-            initializeMainUIComponents()
+//            initializeMainUIComponents() // seems to be the culprit if outside this if !
         }
     }
 
-    fun showMapFragment() {
-        val mapFragment = SupportMapFragment.newInstance()
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.mainConstraintLayout, mapFragment)
-            .addToBackStack(null) // This ensures that pressing back returns to the previous state
-            .commit()
-    }
+
 
     fun restoreMainLayout() {
-        supportFragmentManager.popBackStack() // This will pop the map fragment and return to the main layout
-        // Ensure your main layout is correctly restored
+        // Check if there's a map fragment in the back stack before popping
+
+        // this becomes null on back pressed ? seems like a re-def
+//        val mapFragment = supportFragmentManager.findFragmentByTag("map_fragment") as? SupportMapFragment
+
+        setContentView(R.layout.new_main_activity)
+        initializeMainUIComponents()
+        // not null? should this even be null if stack is getting popped instead of remove commit? mby pop by name???
+//        if (mapFragment != null) {
+////            supportFragmentManager.beginTransaction()
+////                .remove(mapFragment)
+////                .commit()
+//
+//            supportFragmentManager.popBackStack() // This will pop the map fragment and return to the main layout
+//        }
     }
 
 
@@ -165,7 +171,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         loadCitiesIntoDrawer(cities)
 
         // Setup map layout
-        mapLayout = layoutInflater.inflate(R.layout.map_layout, null)
+//        mapLayout = layoutInflater.inflate(R.layout.map_layout, null)
+
+        mapFragment = supportFragmentManager
+            .findFragmentById(R.id.map_fragment) as SupportMapFragment
+        mapFragment.getMapAsync(this)
 
         // Initialize buttons
         val openMapButton = findViewById<Button>(R.id.openMapButton)
@@ -251,6 +261,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             getLastKnownLocation()
         }
 
+
+
         // Initialize the navigation drawer
         initializeDrawer()
     }
@@ -260,16 +272,29 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     // begin functions
 
     private fun openMapLayout() {
+//        mapLayout = layoutInflater.inflate(R.layout.map_layout, null)
+
         setContentView(mapLayout)
 
-        val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment) as SupportMapFragment
-        mapFragment.getMapAsync { googleMap ->
-            googleMap.uiSettings.isZoomControlsEnabled = true
-            googleMap.uiSettings.isCompassEnabled = true
 
-            // Example location (replace with actual data)
-            val location = LatLng(37.7749, -122.4194)
-            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 15f))
+        // make this lateinit mby
+       fragment = supportFragmentManager.findFragmentById(R.id.map_fragment) as SupportMapFragment
+        if (fragment is SupportMapFragment) {
+            // doesnt change anything? if val or not
+            val mapFragment = fragment
+            mapFragment.getMapAsync { googleMap ->
+                googleMap.uiSettings.isZoomControlsEnabled = true
+                googleMap.uiSettings.isCompassEnabled = true
+
+                // Example location (replace with actual data)
+                val location = LatLng(37.7749, -122.4194)
+                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 15f))
+            }
+        } else {
+            // Handle the case where the fragment is not found or not the expected type
+
+            // WHERE NULLED
+            Log.e("MapError", "Map fragment is not found or not of the correct type.")
         }
     }
 
@@ -692,7 +717,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 //        chart1.xAxis.setDrawLabels(false)
         chart1.xAxis.setDrawAxisLine(false)
 
-        val mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment) as SupportMapFragment
+//         mapFragment = supportFragmentManager.findFragmentById(R.id.map_fragment) as SupportMapFragment
 
 
     }
@@ -709,15 +734,18 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     override fun onBackPressed() {
-        if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
-            drawerLayout.closeDrawer(GravityCompat.START)
-        }else if (mapFragment != null && mapFragment.isVisible) {
-            // If the map is visible, remove it and show the main UI
-            supportFragmentManager.beginTransaction().remove(mapFragment).commit()
-            // Re-load or re-initialize your main layout here if necessary
-            setContentView(R.layout.new_main_activity)
-        } else {
-            super.onBackPressed()
+        when {
+            drawerLayout.isDrawerOpen(GravityCompat.START) -> {
+                drawerLayout.closeDrawer(GravityCompat.START)
+            }
+            mapFragment != null && mapFragment.isVisible -> {
+                supportFragmentManager.popBackStack()
+                onResume()
+                restoreMainLayout()
+            }
+            else -> {
+                super.onBackPressed()
+            }
         }
     }
 
