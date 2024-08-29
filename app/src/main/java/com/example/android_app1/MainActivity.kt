@@ -63,7 +63,10 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import android.app.Fragment
 import android.util.Log
+import android.view.MotionEvent
 
+
+// TODO: some of the coordinates in the csv are wrong, change csv or fix it
 
 class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
@@ -74,7 +77,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
 
     private lateinit var drawerLayout: DrawerLayout
+    private lateinit var mapDrawerLayout: DrawerLayout
     private lateinit var navView: NavigationView
+    private lateinit var closeDrawerButton: Button
+
+    private lateinit var mainContentLayout: ConstraintLayout
 
 
     private var isThunderstorm = false
@@ -102,6 +109,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     private var x1 = 0f
     private var x2 = 0f
     var currentToast: Toast? = null
+    private var startX: Float = 0f
 
     companion object {
          val CHANNEL_ID = "WeatherChannel"
@@ -120,7 +128,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
     override fun onResume() {
         super.onResume()
-
         // Reinitialize main layout if the map fragment was removed
         if (mapFragment == null) {
             setContentView(R.layout.new_main_activity)
@@ -149,6 +156,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         drawerLayout = findViewById(R.id.drawer_layout)
         navView = findViewById(R.id.navigation_view)
 
+
+
         // Initialize the FusedLocationProviderClient
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
@@ -160,10 +169,14 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             .findFragmentById(R.id.map_fragment) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
+        mapDrawerLayout = mapLayout.findViewById(R.id.map_drawer_layout)
+        closeDrawerButton = mapLayout.findViewById(R.id.close_drawer_button)
+
         // Initialize buttons
         val openMapButton = findViewById<Button>(R.id.openMapButton)
         openMapButton.setOnClickListener {
             openMapLayout()
+            mapDrawerLayout.closeDrawer(GravityCompat.END)
         }
 
         val requestLocationButton: Button = findViewById(R.id.requestLocationButton)
@@ -253,7 +266,46 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private fun openMapLayout() {
 //        mapLayout = layoutInflater.inflate(R.layout.map_layout, null)
+        // TODO: migrate google maps opening on city click listener to this (mayb make a second constructor that takes lat long and opens this map layout at those coordinates)
+// Open the drawer swipe right
 
+
+
+        mapDrawerLayout.openDrawer(GravityCompat.END)
+
+
+        // disable swipe left on drawer
+        mapDrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_OPEN)
+
+
+        closeDrawerButton.setOnClickListener {
+            if (mapDrawerLayout.isDrawerOpen(GravityCompat.END)) {
+                mapDrawerLayout.closeDrawer(GravityCompat.END)
+            }
+        }
+        mapDrawerLayout.addDrawerListener(object : DrawerLayout.DrawerListener {
+            override fun onDrawerSlide(drawerView: View, slideOffset: Float) {}
+
+            override fun onDrawerOpened(drawerView: View) {
+                // Disable swiping when drawer is open
+                mapDrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_OPEN, GravityCompat.END)
+            }
+
+            override fun onDrawerClosed(drawerView: View) {
+                // Enable swiping when drawer is closed
+                mapDrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, GravityCompat.END)
+            }
+
+            override fun onDrawerStateChanged(newState: Int) {}
+        })
+
+        // Initially set drawer to unlocked (swipeable) when closed
+        mapDrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, GravityCompat.END)
+
+
+// Close the drawer (just click out cba fixing this)
+//        mapDrawerLayout.closeDrawer(GravityCompat.END)
+//        mapDrawerLayout.closeDrawers()
         setContentView(mapLayout)
 
 
@@ -268,7 +320,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 guesserCore()
 
         }
-    }}
+    }
+    }
 
 
     fun guesserCore(){
