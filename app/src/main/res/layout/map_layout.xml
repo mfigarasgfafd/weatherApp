@@ -6,24 +6,11 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Main Content Layout -->
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <!-- Main Content Layout - Street View -->
+    <com.google.android.gms.maps.StreetViewPanoramaView
+        android:id="@+id/street_view_panorama"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:context=".MainActivity">
-
-        <!-- Main content of your activity goes here -->
-        <TextView
-            android:id="@+id/main_content"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Main Content"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
+        android:layout_height="match_parent" />
 
     <!-- Drawer View - Contains the Google Map Fragment and Close Button -->
     <FrameLayout

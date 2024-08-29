@@ -64,11 +64,14 @@ import com.google.android.gms.maps.model.LatLng
 import android.app.Fragment
 import android.util.Log
 import android.view.MotionEvent
+import com.google.android.gms.maps.OnStreetViewPanoramaReadyCallback
+import com.google.android.gms.maps.StreetViewPanorama
+import com.google.android.gms.maps.StreetViewPanoramaView
 
 
 // TODO: some of the coordinates in the csv are wrong, change csv or fix it
 
-class MainActivity : AppCompatActivity(), OnMapReadyCallback {
+class MainActivity : AppCompatActivity(), OnMapReadyCallback, OnStreetViewPanoramaReadyCallback  {
 
     private lateinit var notificationManager: NotificationManager
     private val CHANNEL_ID = "WeatherChannel"
@@ -82,6 +85,9 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var closeDrawerButton: Button
 
     private lateinit var mainContentLayout: ConstraintLayout
+
+    private lateinit var streetViewPanorama: StreetViewPanoramaView
+
 
 
     private var isThunderstorm = false
@@ -122,7 +128,10 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.new_main_activity)
         mapLayout = layoutInflater.inflate(R.layout.map_layout, null)
+        streetViewPanorama = mapLayout.findViewById(R.id.street_view_panorama)
 
+        streetViewPanorama.onCreate(savedInstanceState)
+        streetViewPanorama.getStreetViewPanoramaAsync(this)
         initializeMainUIComponents()
     }
 
@@ -171,6 +180,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
         mapDrawerLayout = mapLayout.findViewById(R.id.map_drawer_layout)
         closeDrawerButton = mapLayout.findViewById(R.id.close_drawer_button)
+
+
 
         // Initialize buttons
         val openMapButton = findViewById<Button>(R.id.openMapButton)
@@ -923,6 +934,22 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         // nothing
     }
 
+    override fun onStreetViewPanoramaReady(panorama: StreetViewPanorama) {
+        // Set a random location
+
+        val randomCity = getRandomCity()
+
+        panorama.isStreetNamesEnabled = false
+
+        Log.e("randomCity", randomCity.toString())
+        val randomLocation = LatLng(randomCity.latitude, randomCity.longitude)
+
+        panorama.setPosition(randomLocation)
+    }
+
+    private fun getRandomCity(): City {
+        return cities.random()
+    }
 
 }
 
