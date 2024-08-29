@@ -44,7 +44,6 @@ import java.util.Locale
 import android.os.Build
 import android.view.WindowInsetsController
 import android.widget.Button
-import androidx.core.app.NotificationCompat
 import androidx.work.*
 import java.util.concurrent.TimeUnit
 import android.app.NotificationChannel
@@ -53,17 +52,10 @@ import android.net.Uri
 import android.view.ViewGroup
 import com.github.matteobattilana.weather.PrecipType
 import com.github.matteobattilana.weather.WeatherView
-import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.MapView
-import com.google.android.gms.maps.GoogleMapOptions;
-import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
-import android.app.Fragment
-import android.util.Log
-import android.view.MotionEvent
 import com.google.android.gms.maps.OnStreetViewPanoramaReadyCallback
 import com.google.android.gms.maps.StreetViewPanorama
 import com.google.android.gms.maps.StreetViewPanoramaView
@@ -78,7 +70,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, OnStreetViewPanora
     private val NOTIFICATION_ID = 1
     private val WORK_NAME = "WeatherUpdateWork"
 
-
+    private lateinit var streetViewCity: City
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var mapDrawerLayout: DrawerLayout
     private lateinit var navView: NavigationView
@@ -133,6 +125,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, OnStreetViewPanora
         streetViewPanorama.onCreate(savedInstanceState)
         streetViewPanorama.getStreetViewPanoramaAsync(this)
         initializeMainUIComponents()
+        streetViewCity = getRandomCity()
+
     }
 
     override fun onResume() {
@@ -186,6 +180,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, OnStreetViewPanora
         // Initialize buttons
         val openMapButton = findViewById<Button>(R.id.openMapButton)
         openMapButton.setOnClickListener {
+            setPanoramaPosition(getRandomCity())
+
             openMapLayout()
             mapDrawerLayout.closeDrawer(GravityCompat.END)
         }
@@ -232,7 +228,9 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, OnStreetViewPanora
         // Set up location text click listener to open the map view
         locationText.setOnClickListener {
             currentCity?.let { city ->
-                openMapView(city.latitude, city.longitude, city.name)
+                streetViewCity = currentCity as City
+                setPanoramaPosition(streetViewCity)
+                openMapLayout()
             }
         }
 
@@ -937,19 +935,24 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, OnStreetViewPanora
     override fun onStreetViewPanoramaReady(panorama: StreetViewPanorama) {
         // Set a random location
 
-        val randomCity = getRandomCity()
-
         panorama.isStreetNamesEnabled = false
 
-        Log.e("randomCity", randomCity.toString())
-        val randomLocation = LatLng(randomCity.latitude, randomCity.longitude)
 
-        panorama.setPosition(randomLocation)
+    }
+
+    private fun setPanoramaPosition(city: City) {
+        val location = LatLng(city.latitude, city.longitude)
+        streetViewPanorama.getStreetViewPanoramaAsync { panorama ->
+            panorama.setPosition(location)
+        }
+
     }
 
     private fun getRandomCity(): City {
+
         return cities.random()
     }
+
 
 }
 
