@@ -6,11 +6,41 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Main Content Layout - Street View -->
-    <com.google.android.gms.maps.StreetViewPanoramaView
-        android:id="@+id/street_view_panorama"
+    <!-- Main Content Layout -->
+    <FrameLayout
+        android:id="@+id/main_content_layout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent">
+
+        <com.google.android.gms.maps.StreetViewPanoramaView
+            android:id="@+id/street_view_panorama"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/result_screen"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#80000000"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/result_text"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintHeight_percent="0.4"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </FrameLayout>
 
     <!-- Drawer View - Contains the Google Map Fragment and Close Button -->
     <FrameLayout

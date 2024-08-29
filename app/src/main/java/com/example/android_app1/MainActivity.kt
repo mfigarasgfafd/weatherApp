@@ -59,6 +59,9 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.OnStreetViewPanoramaReadyCallback
 import com.google.android.gms.maps.StreetViewPanorama
 import com.google.android.gms.maps.StreetViewPanoramaView
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 
 
 // TODO: some of the coordinates in the csv are wrong, change csv or fix it
@@ -87,6 +90,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, OnStreetViewPanora
     private lateinit var fragment: SupportMapFragment
     private lateinit var mapFragment: SupportMapFragment
 
+    private lateinit var resultScreen: ConstraintLayout
+    private lateinit var resultText: TextView
     private lateinit var smallTemps: TextView
     private lateinit var weatherTextView: TextView
     private lateinit var bigTempView: TextView
@@ -175,12 +180,14 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, OnStreetViewPanora
         mapDrawerLayout = mapLayout.findViewById(R.id.map_drawer_layout)
         closeDrawerButton = mapLayout.findViewById(R.id.close_drawer_button)
 
-
+        resultScreen = mapLayout.findViewById(R.id.result_screen)
+        resultText = mapLayout.findViewById(R.id.result_text)
 
         // Initialize buttons
         val openMapButton = findViewById<Button>(R.id.openMapButton)
         openMapButton.setOnClickListener {
-            setPanoramaPosition(getRandomCity())
+            streetViewCity = getRandomCity()
+            setPanoramaPosition(streetViewCity)
 
             openMapLayout()
             mapDrawerLayout.closeDrawer(GravityCompat.END)
@@ -231,6 +238,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, OnStreetViewPanora
                 streetViewCity = currentCity as City
                 setPanoramaPosition(streetViewCity)
                 openMapLayout()
+                mapDrawerLayout.closeDrawer(GravityCompat.END)
+
             }
         }
 
@@ -274,12 +283,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, OnStreetViewPanora
     // begin functions
 
     private fun openMapLayout() {
-//        mapLayout = layoutInflater.inflate(R.layout.map_layout, null)
-        // TODO: migrate google maps opening on city click listener to this (mayb make a second constructor that takes lat long and opens this map layout at those coordinates)
-// Open the drawer swipe right
-
-
-
         mapDrawerLayout.openDrawer(GravityCompat.END)
 
 
@@ -311,10 +314,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, OnStreetViewPanora
         // Initially set drawer to unlocked (swipeable) when closed
         mapDrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, GravityCompat.END)
 
-
-// Close the drawer (just click out cba fixing this)
-//        mapDrawerLayout.closeDrawer(GravityCompat.END)
-//        mapDrawerLayout.closeDrawers()
         setContentView(mapLayout)
 
 
@@ -326,39 +325,39 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, OnStreetViewPanora
             mapFragment.getMapAsync { googleMap ->
                 googleMap.uiSettings.isZoomControlsEnabled = true
                 googleMap.uiSettings.isCompassEnabled = true
+
                 guesserCore()
-
         }
     }
+
     }
 
 
-    fun guesserCore(){
-        mapFragment.getMapAsync{googleMap ->
-        googleMap.setOnMapClickListener { latLng ->
-            val latitude_local = latLng.latitude
-            val longitude_local = latLng.longitude
-            val nearestCity = findNearestCity(latitude_local, longitude_local, cities)
-            val cityName = nearestCity?.name ?: "Unknown"
-            val distanceKm = nearestCity?.let {
-                calculateDistance(latitude_local, longitude_local, it.latitude, it.longitude)
-            } ?: 0.0
-            // Display the city name and distance in a Toast
-           showToast(cityName, distanceKm)
-            // starting location
-            //val location = LatLng(0.0, 0.0)
-            //  googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 1f))
+    private fun guesserCore() {
+        mapFragment.getMapAsync { googleMap ->
+            googleMap.setOnMapClickListener { latLng ->
+                val latitude = latLng.latitude
+                val longitude = latLng.longitude
+                val nearestCity = findNearestCity(latitude, longitude, cities)
+                val cityName = streetViewCity.name ?: "Unknown"
+                val distanceKm = streetViewCity.let {
+                    calculateDistance(latitude, longitude, it.latitude, it.longitude)
+                } ?: 0.0
+
+                showResultScreen(cityName, distanceKm)
+                mapDrawerLayout.closeDrawer(GravityCompat.END)
+            }
         }
     }
-    }
+    private fun showResultScreen(cityName: String, distanceKm: Double) {
+        resultText.text = "THE CITY WAS: $cityName\nYOU WERE: ${"%.2f".format(distanceKm)}km OFF"
+        resultScreen.visibility = View.VISIBLE
 
-    fun showToast(cityName: String, distanceKm: Double) {
-        // Cancel the current Toast if it's showing
-        currentToast?.cancel()
-
-        // Create and show the new Toast
-        currentToast = Toast.makeText(this, "City: $cityName, Distance: ${"%.2f".format(distanceKm)} km", Toast.LENGTH_SHORT)
-        currentToast?.show()
+        CoroutineScope(Dispatchers.Main).launch {
+            delay(3000) // Wait for 3 seconds
+            resultScreen.visibility = View.GONE
+            resetGuesser()
+        }
     }
 
     fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
@@ -372,24 +371,10 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, OnStreetViewPanora
         return radiusOfEarthKm * c
     }
 
-
-    private fun openMapView(latitude: Double, longitude: Double, cityName: String) {
-
-        val uri = Uri.parse("geo:$latitude,$longitude?q=$latitude,$longitude($cityName)")
-        val intent = Intent(Intent.ACTION_VIEW, uri)
-        intent.setPackage("com.google.android.apps.maps")  // Ensure the intent is handled by Google Maps
-
-        if (intent.resolveActivity(packageManager) != null) {
-            startActivity(intent)
-        } else {
-            // Handle the case where no app can handle the intent
-            Toast.makeText(this, "No map application found", Toast.LENGTH_SHORT).show()
-        }
+    fun resetGuesser(){
+        streetViewCity = getRandomCity()
+        setPanoramaPosition(streetViewCity)
     }
-
-
-
-
 
     private fun findCityByName(cityName: String): City? {
         return cities.find { it.name.equals(cityName, ignoreCase = true) }
