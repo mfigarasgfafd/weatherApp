@@ -802,6 +802,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, OnStreetViewPanora
                 supportFragmentManager.popBackStack()
                 onResume()
                 restoreMainLayout()
+
             }
             else -> {
                 super.onBackPressed()
