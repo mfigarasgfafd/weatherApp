@@ -22,7 +22,7 @@
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyBHaDgQ6T0aqcPbmwhd-q3RhLqv7mRqzAU"/>
+            android:value="${MAPS_KEY}"/>
         <activity
             android:name=".ForecastActivity"
             android:exported="false" />
