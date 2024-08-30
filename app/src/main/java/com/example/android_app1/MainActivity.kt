@@ -83,6 +83,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, OnStreetViewPanora
 
     private lateinit var streetViewPanorama: StreetViewPanoramaView
 
+    private var hotstreak = 0
 
 
     private var isThunderstorm = false
@@ -344,6 +345,12 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, OnStreetViewPanora
                     calculateDistance(latitude, longitude, it.latitude, it.longitude)
                 } ?: 0.0
 
+                if (distanceKm < 100) {
+                    hotstreak++
+                } else {
+                    Toast.makeText(this, "Your streak was: $hotstreak", Toast.LENGTH_SHORT).show()
+                    hotstreak = 0
+                }
                 showResultScreen(cityName, distanceKm)
                 mapDrawerLayout.closeDrawer(GravityCompat.END)
             }
